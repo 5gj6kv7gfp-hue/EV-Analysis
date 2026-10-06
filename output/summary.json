@@ -1,0 +1,20 @@
+{
+  "as_of_latest_request_date_2026": "2026-10-05",
+  "precinct_match": {
+    "matched": 876,
+    "only_2022": 8,
+    "only_2026": 13,
+    "stable_boundaries": 855
+  },
+  "county_mail_ballots_2022_matched": 100911,
+  "county_requests_2026_matched": 67146,
+  "county_ratio_26req_to_22mail": 0.665,
+  "spearman_lean_vs_log_ratio": -0.121,
+  "spearman_lean_vs_log_ratio_stable": -0.139,
+  "weighted_slope_log_ratio_per_10pts_D_2022gov": -0.0211,
+  "weighted_slope_log_ratio_per_10pts_D_2022gov_stable": -0.0263,
+  "weighted_slope_log_ratio_per_10pts_D_affiliation_2026": -0.0175,
+  "mail_electorate_whaley_share_2022_actual": 57.33,
+  "mail_electorate_whaley_share_reweighted_to_2026_requests": 56.95,
+  "composition_shift_pts": -0.37
+}

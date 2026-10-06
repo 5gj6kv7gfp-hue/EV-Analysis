@@ -1,0 +1,3 @@
+# Raw BOE files contain voter names/addresses; regenerate with scripts/fetch_franklin.py
+data/raw/
+__pycache__/
