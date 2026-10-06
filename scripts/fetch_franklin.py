@@ -34,6 +34,7 @@ UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.3
 # served filename on the ElectionVault page -> local filename
 VAULT_FILES = {
     "Absentee by Mail Voter List (Current Election).txt": "fc_abs_mail_2026.txt",
+    "Absentee In-Person Voter List (Current Election).txt": "fc_abs_inperson_2026.txt",
     "VOTERFILE.TXT": "fc_voterfile_2026.txt",
 }
 

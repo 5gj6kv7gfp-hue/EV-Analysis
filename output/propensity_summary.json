@@ -1,0 +1,87 @@
+{
+  "requests_in_list": 68620,
+  "requests_matched_to_voter_file": 68562,
+  "pct_requesters_new_or_skipped_2022": 27.0,
+  "pct_registrants_new_or_skipped_2022": 57.6,
+  "pct_new_or_skipped_by_party": {
+    "D": 12.7,
+    "R": 10.0,
+    "U": 54.8
+  },
+  "request_rate_pct_by_tier_party": {
+    "New since 2022": {
+      "D": 8.8,
+      "R": 11.3,
+      "U": 3.8,
+      "R_to_D_ratio": 1.28
+    },
+    "Skipped 2022": {
+      "D": 5.74,
+      "R": 6.87,
+      "U": 2.54,
+      "R_to_D_ratio": 1.2
+    },
+    "Voted 2022 only": {
+      "D": 11.95,
+      "R": 11.13,
+      "U": 9.22,
+      "R_to_D_ratio": 0.93
+    },
+    "Voted 2018 & 2022": {
+      "D": 14.0,
+      "R": 14.85,
+      "U": 12.22,
+      "R_to_D_ratio": 1.06
+    }
+  },
+  "request_rate_pct_by_lean_tier": {
+    "<40% D": {
+      "New since 2022": 5.439,
+      "Skipped 2022": 4.208,
+      "Voted 2022 only": 11.712,
+      "Voted 2018 & 2022": 16.216,
+      "skipped_vs_habitual": 0.259,
+      "new_vs_habitual": 0.335
+    },
+    "40-50% D": {
+      "New since 2022": 6.33,
+      "Skipped 2022": 4.357,
+      "Voted 2022 only": 12.077,
+      "Voted 2018 & 2022": 15.372,
+      "skipped_vs_habitual": 0.283,
+      "new_vs_habitual": 0.412
+    },
+    "50-60% D": {
+      "New since 2022": 4.403,
+      "Skipped 2022": 3.616,
+      "Voted 2022 only": 10.888,
+      "Voted 2018 & 2022": 14.251,
+      "skipped_vs_habitual": 0.254,
+      "new_vs_habitual": 0.309
+    },
+    "60-70% D": {
+      "New since 2022": 3.612,
+      "Skipped 2022": 3.073,
+      "Voted 2022 only": 9.446,
+      "Voted 2018 & 2022": 12.814,
+      "skipped_vs_habitual": 0.24,
+      "new_vs_habitual": 0.282
+    },
+    "70-80% D": {
+      "New since 2022": 2.931,
+      "Skipped 2022": 2.449,
+      "Voted 2022 only": 7.64,
+      "Voted 2018 & 2022": 11.728,
+      "skipped_vs_habitual": 0.209,
+      "new_vs_habitual": 0.25
+    },
+    "80%+ D": {
+      "New since 2022": 1.572,
+      "Skipped 2022": 1.933,
+      "Voted 2022 only": 5.917,
+      "Voted 2018 & 2022": 10.831,
+      "skipped_vs_habitual": 0.178,
+      "new_vs_habitual": 0.145
+    }
+  }
+}

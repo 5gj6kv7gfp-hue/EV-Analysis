@@ -165,6 +165,79 @@ the result:
 - Polling. In the backtest, the actual swing was 3 to 18 times larger than the turnout-geography
   effect in every pair.
 
+## Follow-up checks (run Oct 6, 2026)
+
+### 1. Returned ballots and early in-person votes against 2022: not possible yet
+
+Today is the first day of voting. Franklin's in-person early-vote list is still empty. The
+mail list shows 126 returned ballots, which are military/overseas ballots sent Sept. 18. There's
+also no public 2022 baseline for the same point in the calendar: the BOE only posts the
+current election's list, and the state's daily county reports couldn't be reached from here.
+This becomes possible if the daily 2026 lists are saved going forward and compared with 2022
+county totals at the same number of days out.
+
+### 2. Who the 2026 mail requesters are, by vote history (`scripts/propensity_2026.py`)
+
+Requests were linked to the voter file (68,562 of 68,620 matched on county voter ID). Every
+registrant was then sorted into one of four midterm vote-history groups:
+
+- **New since 2022:** registered after the 2022 general.
+- **Skipped 2022:** registered in time for 2022 but didn't vote.
+- **Voted 2022 only:** voted in 2022 but not 2018.
+- **Voted 2018 & 2022:** habitual midterm voter.
+
+Party here is each voter's **last D or R primary before 2026**. Using the current label would be
+circular: taking a 2026 primary ballot is itself a sign of engagement, and Franklin's 2026
+primary drew 122k D ballots against 50k R.
+
+![composition](output/propensity_composition.png)
+
+- **Requesters are mostly habitual voters, as mail requesters usually are.** 59% voted in both
+  2018 and 2022, compared with 32% of all registrants. Only 27% are new since 2022 or skipped
+  2022, compared with 58% of registrants.
+- **Among voters with a partisan primary history, Republicans are drawing in slightly more
+  low-propensity voters.** Within each vote-history group, here is the share of registrants who
+  requested a mail ballot:
+
+  | Vote history | D request rate | R request rate | R ÷ D |
+  |---|---:|---:|---:|
+  | New since 2022 (3.9k D / 2.1k R registrants) | 8.8% | 11.3% | 1.28 |
+  | Skipped 2022 (50.7k D / 23.5k R) | 5.7% | 6.9% | 1.20 |
+  | Voted 2022 only | 11.9% | 11.1% | 0.93 |
+  | Voted 2018 & 2022 | 14.0% | 14.9% | 1.06 |
+
+  ![rates](output/propensity_request_rate.png)
+
+- **The same pattern appears by precinct lean, which doesn't depend on party labels.** Compare
+  infrequent voters' request rate with habitual voters' rate in the same precincts. The ratio
+  falls steadily from Republican to Democratic areas:
+
+  | Precinct lean | Skipped 2022 rate ÷ habitual rate | New since 2022 rate ÷ habitual rate |
+  |---|---:|---:|
+  | <40% D | 0.26 | 0.34 |
+  | 40–50% D | 0.28 | 0.41 |
+  | 50–60% D | 0.25 | 0.31 |
+  | 60–70% D | 0.24 | 0.28 |
+  | 70–80% D | 0.21 | 0.25 |
+  | 80%+ D | 0.18 | 0.15 |
+
+**How to read this.** On its face, infrequent voters in Republican areas and with Republican
+primary histories are slightly more engaged with *mail* so far. Three things weaken that as a
+turnout signal:
+
+- **Where the low-propensity voters are.** The bluest precincts are dense, young, high-turnover
+  Columbus neighborhoods, including the OSU campus area. Many "new" and "skipped" registrants
+  there are students and renters, who use mail less and in-person voting more, and some have
+  out-of-date addresses. That lowers their mail rate regardless of enthusiasm.
+- **No 2022 equivalent to compare with**, so this can't show whether the gap is bigger or smaller
+  than usual. The backtest above showed mail patterns leaning R-ward in previous midterms too.
+- **Mail requests are only part of early voting.** Whether low-propensity Democrats are showing
+  up will appear in the in-person early vote, which started today.
+
+The most useful next step is to save the daily mail and in-person lists, then repeat this
+vote-history breakdown on **ballots actually cast** each week. That shows whether infrequent
+voters' share of early votes is rising in D or R areas as Election Day approaches.
+
 ## Caveats
 
 - **Different stages.** 2026 is requests at day 28 before the election. 2022 is final ballots
@@ -184,6 +257,7 @@ pip install -r requirements.txt
 python scripts/fetch_franklin.py     # downloads raw BOE files to data/raw/ (gitignored, contains PII)
 python scripts/analyze_franklin.py   # writes data/processed/*.csv, output/*.png, output/summary.json
 python scripts/backtest_franklin.py  # 2014-2024 backtest (run after analyze_franklin.py)
+python scripts/propensity_2026.py    # vote-history profile of 2026 requesters (run after analyze_franklin.py)
 ```
 
 ## Outputs
@@ -193,3 +267,4 @@ python scripts/backtest_franklin.py  # 2014-2024 backtest (run after analyze_fra
 - `data/processed/franklin_vbm_by_party_2026.csv` — 2026 request rate by affiliation
 - `output/summary.json` — headline statistics
 - `data/processed/backtest_years.csv`, `backtest_pairs.csv` — backtest tables
+- `data/processed/propensity_2026_*.csv`, `output/propensity_summary.json` — requester vote-history tables
