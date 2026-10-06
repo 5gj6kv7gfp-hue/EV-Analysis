@@ -94,6 +94,77 @@ bluest urban precincts are slightly under-represented. The size of the shift is 
 was 38% of early votes, down from 52% in May 2022. This county's data shows that drop is slightly
 steeper in Democratic areas. **It is not evidence of a large partisan swing in turnout.**
 
+## How predictive is this? A backtest, 2014–2024
+
+To judge whether the 2026 pattern means anything for the result, I ran the same measurement on
+every earlier pair of comparable Franklin County general elections: midterm to midterm, and
+presidential to presidential. Each year's precinct results split by voting method are published
+by the BOE (`scripts/backtest_franklin.py`). The backtest is generous to the indicator because it
+uses *final* mail ballots for both years, not requests four weeks out.
+
+Each pair is scored on three measures:
+
+- **Mail tilt.** How far the precincts that cast mail ballots shifted toward D or R precincts. This
+  is the same −0.4-point "composition shift" computed for 2026.
+- **Turnout tilt.** The same calculation applied to *all* ballots: how far overall turnout shifted
+  toward D or R precincts.
+- **Actual swing.** The change in the county's D two-party share at the top of the ticket.
+
+| Pair | Mail tilt | Turnout tilt | Actual swing (D two-party) | Precinct lean vs mail change (ρ) | Precinct mail change vs turnout change (ρ) |
+|---|---:|---:|---:|---:|---:|
+| 2014 → 2018 (gov) | −0.4 | **+1.3** | **+23.3** | −0.12 | 0.53 |
+| 2018 → 2022 (gov) | −0.2 | −1.2 | −8.1 | −0.13 | 0.50 |
+| 2016 → 2020 (pres) | **+1.2** | −0.4 | +2.2 | +0.37 | 0.34 |
+| 2020 → 2024 (pres) | −1.3 | −0.5 | −1.6 | −0.58 | 0.47 |
+| **2022 → 2026 (requests to date)** | **−0.4** | ? | ? | **−0.12** | ? |
+
+![backtest](output/backtest_tilts.png)
+
+What the backtest shows:
+
+1. **The 2026 pattern is what midterms usually look like here.** In both earlier midterm pairs,
+   mail activity shifted toward R-leaning precincts by almost exactly the same amount as now:
+   ρ = −0.12 and −0.13, against −0.12 in 2026, with mail tilts of −0.4 and −0.2. The outcomes of
+   those two pairs were opposite. In 2018 Democrats gained 23 points countywide and turnout tilted
+   toward D precincts. In 2022 they lost 8 points. A signal that looked the same before a D wave
+   and before a D slump can't distinguish between them.
+2. **Mail tilt got the direction of turnout tilt right only 2 times out of 4.** In 2014→2018 and
+   2016→2020 it pointed the wrong way. Where it was right, its size was off by a factor of 3 to 7.
+   Precinct-level changes in mail ballots do partly track changes in turnout (ρ ≈ 0.3–0.5). That
+   relationship is too noisy, and too mixed up with people switching between voting methods, to
+   read a direction from.
+3. **Even a perfect read of turnout geography would explain little of the outcome.** Turnout
+   tilts ranged from −1.2 to +1.3 points. Actual swings ranged from −8 to +23. Swings are driven by
+   persuasion, the candidates, and the national environment. Mail is also only 21–24% of ballots
+   in non-pandemic years.
+4. **The mail vote's raw partisanship isn't a stable baseline either.** The D share of the mail
+   vote minus the D share overall was −4 (2014), −6 (2018), +8 (2020), 0 (2022), and +3 (2024).
+   It swings with each party's message about voting by mail, so "D share of mail ballots" can't be
+   read on its own.
+
+| Year | Mail % of ballots | D share overall | D share of mail | Gap |
+|---|---:|---:|---:|---:|
+| 2014 | 29.4% | 41.7% | 37.7% | −4.1 |
+| 2016 | 24.0% | 63.8% | 60.2% | −3.6 |
+| 2018 | 21.3% | 65.1% | 59.1% | −6.1 |
+| 2020 | 40.5% | 66.0% | 74.2% | +8.3 |
+| 2022 | 23.7% | 57.0% | 57.2% | +0.2 |
+| 2024 | 20.9% | 64.4% | 67.4% | +3.0 |
+
+**Assessment: the 2022→2026 precinct shift has close to no predictive value for the outcome.**
+Its size (−0.4 pts) matches the noise floor, and its direction matches what came before both a D
+wave and a D slump. The party-affiliation request rates (R 13.7% vs D 11.9%) have no historical
+counterpart to calibrate against. Ohio's affiliation codes also move with each primary's turnout,
+so the R–D gap may reflect who happened to vote in a primary, and their voting-method habits,
+more than enthusiasm. Better signals for
+the result:
+- 2026 *returned* ballots and early in-person votes measured against 2022 at the same day before
+  the election.
+- How many of each year's early voters are new or infrequent voters (from vote history). Changes
+  in turnout composition show up there, while mail-versus-in-person mostly reflects habit.
+- Polling. In the backtest, the actual swing was 3 to 18 times larger than the turnout-geography
+  effect in every pair.
+
 ## Caveats
 
 - **Different stages.** 2026 is requests at day 28 before the election. 2022 is final ballots
@@ -112,6 +183,7 @@ steeper in Democratic areas. **It is not evidence of a large partisan swing in t
 pip install -r requirements.txt
 python scripts/fetch_franklin.py     # downloads raw BOE files to data/raw/ (gitignored, contains PII)
 python scripts/analyze_franklin.py   # writes data/processed/*.csv, output/*.png, output/summary.json
+python scripts/backtest_franklin.py  # 2014-2024 backtest (run after analyze_franklin.py)
 ```
 
 ## Outputs
@@ -120,3 +192,4 @@ python scripts/analyze_franklin.py   # writes data/processed/*.csv, output/*.png
 - `data/processed/franklin_vbm_by_lean.csv` (and `_stable_precincts.csv`) — lean-group summaries
 - `data/processed/franklin_vbm_by_party_2026.csv` — 2026 request rate by affiliation
 - `output/summary.json` — headline statistics
+- `data/processed/backtest_years.csv`, `backtest_pairs.csv` — backtest tables

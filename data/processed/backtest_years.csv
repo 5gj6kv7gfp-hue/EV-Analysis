@@ -1,0 +1,7 @@
+year,race,precincts,total_ballots,mail_ballots,mail_pct_of_ballots,d_share_overall,d_share_mail,mail_minus_overall_d
+2014,Governor,821,299272,87979,29.4,41.74,37.68,-4.06
+2016,President,844,593435,142247,24.0,63.79,60.2,-3.59
+2018,Governor,881,491311,104525,21.3,65.13,59.05,-6.08
+2020,President,884,636056,257548,40.5,65.95,74.24,8.29
+2022,Governor,884,430020,102125,23.7,56.99,57.17,0.18
+2024,President,888,608855,127166,20.9,64.35,67.36,3.01

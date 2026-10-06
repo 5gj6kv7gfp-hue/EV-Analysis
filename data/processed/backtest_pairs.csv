@@ -1,0 +1,5 @@
+pair,matched_precincts,mail_tilt_pts,turnout_tilt_pts,actual_swing_pts,mail_ballot_growth,rho_mail_vs_turnout_change,rho_mail_change_vs_swing,rho_lean_vs_mail_change,rho_lean_vs_turnout_change
+2014->2018,787,-0.38,1.26,23.32,1.16,0.525,0.197,-0.124,0.387
+2018->2022,838,-0.18,-1.22,-8.07,0.97,0.499,0.304,-0.129,-0.55
+2016->2020,775,1.18,-0.39,2.23,1.762,0.339,0.126,0.373,-0.279
+2020->2024,858,-1.32,-0.45,-1.59,0.486,0.473,0.313,-0.581,-0.342
