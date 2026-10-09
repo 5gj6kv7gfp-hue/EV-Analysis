@@ -1,0 +1,779 @@
+<title>US City Well-Being Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap">
+<style>
+/* Layout: one reading column (max 1180px); the explorer is a two-track grid (chart | weight panel) that stacks below 900px. */
+:root {
+  --bg: #f6f6f2;
+  --surface: #fcfcfb;
+  --ink: #111110;
+  --ink-2: #52514e;
+  --muted: #7d7b75;
+  --grid: #e4e3dc;
+  --axis: #c3c2b7;
+  --line: rgba(17, 17, 16, 0.10);
+  --series: #2a78d6;
+  --emph: #eb6834;
+  --pos: #2a78d6;
+  --neg: #e34948;
+  --mid: #f0efec;
+  --chip: #ebeae4;
+  --font: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-xs: 0.75rem; --fs-sm: 0.8125rem; --fs-base: 0.9375rem; --fs-md: 1.0625rem; --fs-lg: 1.375rem; --fs-xl: clamp(1.9rem, 4vw, 2.75rem);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f0e; --surface: #1a1a19; --ink: #f4f4f1; --ink-2: #c3c2b7; --muted: #95938c; --grid: #2c2c2a;
+    --axis: #45443f; --line: rgba(255, 255, 255, 0.10); --series: #3987e5; --emph: #d95926; --pos: #3987e5;
+    --neg: #e66767; --mid: #383835; --chip: #262624; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f0e; --surface: #1a1a19; --ink: #f4f4f1; --ink-2: #c3c2b7; --muted: #95938c; --grid: #2c2c2a;
+  --axis: #45443f; --line: rgba(255, 255, 255, 0.10); --series: #3987e5; --emph: #d95926; --pos: #3987e5;
+  --neg: #e66767; --mid: #383835; --chip: #262624; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: var(--fs-base); line-height: 1.55; }
+.wrap > *, .explorer > *, .table-sec > *, .explorer-grid > *, .drivers-grid > *, .method-grid > * { min-width: 0; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; display: grid; gap: 40px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: var(--fs-xl); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: var(--fs-lg); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: var(--fs-md); font-weight: 700; }
+p { margin: 0; }
+a { color: var(--series); }
+.eyebrow { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.dek { font-size: var(--fs-md); color: var(--ink-2); max-width: 68ch; }
+header { display: grid; gap: 10px; }
+.prose { max-width: 70ch; display: grid; gap: 12px; color: var(--ink-2); }
+.prose strong { color: var(--ink); }
+
+/* Findings */
+.findings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; border-top: 1px solid var(--line); padding-top: 20px; }
+.finding { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.finding h3 { font-size: var(--fs-base); }
+.finding p { color: var(--ink-2); font-size: var(--fs-sm); }
+.finding .figure-num { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); line-height: 1.1; }
+@media (max-width: 760px) { .findings { grid-template-columns: minmax(0, 1fr); } }
+
+/* Controls */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > span { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+input[type="search"], select { font: inherit; font-size: var(--fs-sm); color: var(--ink); background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; padding: 7px 10px; min-width: 0; }
+input[type="search"] { width: 15rem; max-width: 100%; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--series); outline-offset: 2px; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--chip); border-radius: 9px; padding: 3px; gap: 2px; }
+.seg button { font: inherit; font-size: var(--fs-sm); border: 0; background: transparent; color: var(--ink-2); padding: 5px 11px; border-radius: 7px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+.seg button:hover { color: var(--ink); }
+
+/* Explorer */
+.explorer { display: grid; gap: 16px; }
+.explorer-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .explorer-grid { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.chart-card { padding: 16px 16px 8px; position: relative; min-width: 0; }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; align-items: baseline; margin-bottom: 6px; }
+.chart-head p { color: var(--muted); font-size: var(--fs-sm); }
+#scatter { display: block; width: 100%; touch-action: manipulation; }
+#scatter text { font-family: var(--font); }
+.tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.axis-title { fill: var(--ink-2); font-size: 12px; font-weight: 500; }
+.quad { fill: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+.lbl { fill: var(--ink-2); font-size: 11px; font-weight: 500; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.lbl.sel { fill: var(--ink); font-weight: 700; }
+.dot { transition: transform 420ms cubic-bezier(.2,.7,.2,1), opacity 200ms; }
+@media (prefers-reduced-motion: reduce) { .dot { transition: none; } }
+.chart-note { font-size: var(--fs-xs); color: var(--muted); padding: 4px 2px 6px; }
+
+/* Tooltip */
+.tip { position: absolute; z-index: 5; pointer-events: none; width: 286px; max-width: calc(100% - 16px); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.14); padding: 12px 14px; font-size: var(--fs-sm); display: grid; gap: 8px; }
+.tip-name { font-weight: 700; font-size: var(--fs-base); line-height: 1.25; }
+.tip-metro { color: var(--muted); font-size: var(--fs-xs); }
+.tip-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tip-kpi b { display: block; font-size: 1.25rem; font-weight: 700; line-height: 1.1; }
+.tip-kpi span { color: var(--muted); font-size: var(--fs-xs); }
+.dom-rows { display: grid; gap: 3px; }
+.dom-row { display: grid; grid-template-columns: 7.2rem 1fr 2.6rem; gap: 8px; align-items: center; font-size: var(--fs-xs); color: var(--ink-2); }
+.dom-row .val { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+.dbar { position: relative; height: 8px; }
+.dbar::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--axis); }
+.dbar i { position: absolute; top: 0; height: 8px; border-radius: 2px; }
+.tip-facts { color: var(--ink-2); font-size: var(--fs-xs); line-height: 1.5; border-top: 1px solid var(--line); padding-top: 7px; }
+.tip-flag { color: var(--muted); font-size: var(--fs-xs); font-style: italic; }
+
+/* Weights panel */
+.weights { padding: 16px; display: grid; gap: 14px; }
+.weights h3 { font-size: var(--fs-base); }
+.weights .hint { font-size: var(--fs-xs); color: var(--muted); }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.presets button { font: inherit; font-size: var(--fs-xs); font-weight: 600; border: 1px solid var(--axis); background: var(--surface); color: var(--ink-2); padding: 5px 9px; border-radius: 999px; cursor: pointer; }
+.presets button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.wgroup { display: grid; gap: 10px; }
+.wgroup-title { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.wrow { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+.wrow label { font-size: var(--fs-sm); font-weight: 600; }
+.wrow output { font-size: var(--fs-sm); font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; min-width: 2.6rem; text-align: right; }
+.wrow input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: var(--series); margin: 0; }
+.wrow small { grid-column: 1 / -1; color: var(--muted); font-size: var(--fs-xs); line-height: 1.35; }
+
+/* Table */
+.table-sec { display: grid; gap: 12px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:nth-child(2), td:nth-child(2) { text-align: left; }
+th { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; vertical-align: bottom; position: sticky; top: 0; background: var(--surface); }
+th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }
+th button[data-active="true"] { color: var(--ink); }
+td.z { min-width: 3.4rem; }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: color-mix(in oklab, var(--series) 6%, transparent); }
+tbody tr.is-sel td { background: color-mix(in oklab, var(--emph) 14%, transparent); }
+.flag { color: var(--muted); font-size: var(--fs-xs); }
+.table-card { padding: 4px 8px 8px; }
+.table-card .table-wrap { max-height: 640px; overflow: auto; }
+
+/* Drivers */
+.drivers-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 900px) { .drivers-grid { grid-template-columns: minmax(0, 1fr); } }
+.factor-card { padding: 16px; position: relative; min-width: 0; }
+#factors { display: block; width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: var(--fs-xs); color: var(--ink-2); margin: 4px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key-bar { width: 12px; height: 8px; border-radius: 2px; background: var(--neg); display: inline-block; }
+.key-bar.pos { background: var(--pos); }
+.key-tick { width: 2px; height: 12px; background: var(--ink); display: inline-block; }
+.evidence { display: grid; gap: 14px; }
+.evidence dl { margin: 0; display: grid; gap: 10px; }
+.evidence dt { font-weight: 700; color: var(--ink); font-size: var(--fs-sm); }
+.evidence dd { margin: 0; color: var(--ink-2); font-size: var(--fs-sm); }
+
+/* Method */
+.method-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+@media (max-width: 900px) { .method-grid { grid-template-columns: minmax(0, 1fr); } }
+.method ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 8px; color: var(--ink-2); font-size: var(--fs-sm); }
+.src-table td, .src-table th { white-space: normal; text-align: left; vertical-align: top; }
+.src-table th { position: static; background: none; }
+.caveats { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; color: var(--ink-2); font-size: var(--fs-sm); }
+section > h2 + .prose, section > h2 + p { margin-top: 8px; }
+.section-head { display: grid; gap: 6px; }
+.section-head p { color: var(--ink-2); max-width: 75ch; }
+</style>
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">130 largest US cities · data through 2025</p>
+    <h1>US City Well-Being Index</h1>
+    <p class="dek">A city score built from the conditions that most predict how satisfied people are with their lives, plotted against what it costs to live there.</p>
+  </header>
+
+  <section class="findings" aria-label="Key findings">
+    <div class="finding">
+      <p class="figure-num" id="f-r">r = 0.15</p>
+      <h3>Cost barely predicts well-being</h3>
+      <p>Across these cities, a higher price level buys almost nothing on this index. Expensive coastal cities are spread from top to bottom, and so are cheap ones.</p>
+    </div>
+    <div class="finding">
+      <p class="figure-num">&minus;0.45 SD</p>
+      <h3>Relationships and mental health matter most</h3>
+      <p>In 325,940 CDC survey respondents, lacking emotional support, frequent mental distress, and loneliness each lower life satisfaction about 0.4 standard deviations. Doubling household income raises it 0.05.</p>
+    </div>
+    <div class="finding">
+      <p class="figure-num" id="f-best">Overland Park</p>
+      <h3 id="f-best-h">Best value: suburbs and the interior</h3>
+      <p id="f-best-p"></p>
+    </div>
+  </section>
+
+  <section class="explorer" aria-labelledby="explorer-h">
+    <div class="section-head">
+      <h2 id="explorer-h">Well-being against cost of living</h2>
+      <p>Hover or tap a city for its breakdown. Drag the weights to build your own index; scores, ranks, the trend line, and the table all update together.</p>
+    </div>
+    <div class="controls">
+      <label class="field"><span>Find a city</span>
+        <input type="search" id="q" list="city-list" placeholder="e.g. Denver, CO" autocomplete="off">
+        <datalist id="city-list"></datalist>
+      </label>
+      <div class="field"><span>Region</span>
+        <div class="seg" id="region" role="group" aria-label="Region filter"></div>
+      </div>
+      <div class="field"><span>Cost measure</span>
+        <div class="seg" id="xmode" role="group" aria-label="Cost measure">
+          <button type="button" data-x="col" aria-pressed="true">City-adjusted</button>
+          <button type="button" data-x="rpp" aria-pressed="false">Metro (BEA)</button>
+        </div>
+      </div>
+    </div>
+    <div class="explorer-grid">
+      <figure class="card chart-card" style="margin:0">
+        <div class="chart-head">
+          <h3 id="chart-title">Each dot is a city, sized by population</h3>
+          <p id="chart-sub"></p>
+        </div>
+        <svg id="scatter" role="img" aria-labelledby="chart-title chart-sub"></svg>
+        <div class="tip" id="tip" hidden></div>
+        <p class="chart-note">Horizontal line: average of the 130 cities. Vertical line: US average price level. Sloped line: least-squares trend. Faded dots are outside the region filter.</p>
+      </figure>
+      <aside class="card weights" aria-labelledby="w-h">
+        <div style="display:grid;gap:4px">
+          <h3 id="w-h">Index weights</h3>
+          <p class="hint">Shares of the index. Defaults come from the life-satisfaction model (resident measures) and the research literature (place measures).</p>
+        </div>
+        <div class="presets" id="presets" role="group" aria-label="Weight presets"></div>
+        <div class="wgroup" id="g-person"><div class="wgroup-title">How residents are doing · 70%</div></div>
+        <div class="wgroup" id="g-place"><div class="wgroup-title">Place conditions · 30%</div></div>
+        <div class="wgroup" id="g-optional"><div class="wgroup-title">Optional</div></div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="table-sec" aria-labelledby="table-h">
+    <div class="section-head">
+      <h2 id="table-h">All cities</h2>
+      <p>Domain columns are standardized scores: 0 is the 130-city average, +1 is one standard deviation better. "Vs. trend" is how far a city sits above or below the cost trend line. Click a column to sort, or a row to find the city on the chart.</p>
+    </div>
+    <div class="card table-card"><div class="table-wrap"><table id="tbl"><thead></thead><tbody></tbody></table></div></div>
+  </section>
+
+  <section aria-labelledby="drivers-h" style="display:grid;gap:16px">
+    <div class="section-head">
+      <h2 id="drivers-h">What drives well-being</h2>
+      <p>The resident measures and their weights come from a survey-weighted regression of life satisfaction in the CDC's Behavioral Risk Factor Surveillance System (BRFSS), 2023–2024, with age, sex, race, education, and state-by-year controls. Place factors are not in that survey, so their weights rest on published studies.</p>
+    </div>
+    <div class="drivers-grid">
+      <div class="card factor-card">
+        <h3>Effect on life satisfaction, in standard deviations</h3>
+        <div class="legend" aria-hidden="true">
+          <span><i class="key-bar"></i><i class="key-bar pos"></i>Holding the other factors constant (95% CI)</span>
+          <span><i class="key-tick"></i>On its own, demographic controls only</span>
+        </div>
+        <svg id="factors" role="img" aria-label="Bar chart of factor effects on life satisfaction"></svg>
+        <div class="tip" id="ftip" hidden></div>
+      </div>
+      <div class="evidence">
+        <dl>
+          <dt>Social connection carries the most weight</dt>
+          <dd>Lacking emotional support and loneliness are the two largest effects in the model, and they also vary a lot between cities. This matches a long research record: social relationships are among the strongest correlates of happiness (Helliwell &amp; Putnam, 2004) and of survival (Holt-Lunstad et al., 2010).</dd>
+          <dt>Mental and physical health come next</dt>
+          <dd>Frequent mental distress is the single biggest predictor of being dissatisfied with life (+11 percentage points). Clark et al. (<i>The Origins of Happiness</i>, 2018) find mental illness explains more of the variation in life satisfaction than income does.</dd>
+          <dt>Work and money matter, with diminishing returns</dt>
+          <dd>Unemployment hurts beyond the lost pay (Clark &amp; Oswald, 1994), and so does material hardship: not covering rent or utilities, or lacking transportation. Income itself has a small, log-shaped effect (Kahneman &amp; Deaton, 2010). People also compare themselves with neighbors (Luttmer, 2005), so a city's average income adds little to average well-being. That is why purchasing power is off by default.</dd>
+          <dt>Place conditions: safety, commute, air, climate</dt>
+          <dd>Commuting is the least enjoyed part of most people's day (Kahneman et al., 2004), and longer commutes lower life satisfaction (Stutzer &amp; Frey, 2008). Crime lowers well-being through victimization and fear (Cohen, 2008). Fine-particle pollution lowers reported happiness (Levinson, 2012). Americans prefer mild climates, around 65&nbsp;°F (Albouy et al., 2016), but climate effects on well-being are modest, so it gets a small weight.</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="method" aria-labelledby="method-h" style="display:grid;gap:16px">
+    <h2 id="method-h">How the index is built</h2>
+    <div class="method-grid">
+      <div style="display:grid;gap:16px;align-content:start">
+        <ol>
+          <li><strong>Cities.</strong> Every Census place with 200,000+ residents in the 2024 American Community Survey: 130 cities, measured within city limits.</li>
+          <li><strong>Resident measures.</strong> CDC PLACES age-adjusted estimates for each city. Each domain's score is the life satisfaction the BRFSS model predicts from the city's prevalence of those conditions.</li>
+          <li><strong>Resident weights.</strong> A domain's weight is proportional to how much its predicted life satisfaction varies across the 130 cities. Social connection varies most (28%), then physical health (18%), economic security (16%), and mental health (8%). Together they make up 70%.</li>
+          <li><strong>Place weights.</strong> Safety 15%, commute 7%, air quality 4%, climate 4%, set from the studies above. Safety averages log homicide and log violent-crime rates.</li>
+          <li><strong>Scaling.</strong> Each domain is standardized across the cities, combined with the weights, and rescaled so the 130-city average is 100 and one standard deviation is 10.</li>
+          <li><strong>Cost of living.</strong> BEA 2024 Regional Price Parities for the city's metro area (US = 100). The housing component (17% of spending) is rescaled by the city's median rent relative to its metro, so Irvine and Santa Ana, which share a metro, get different costs.</li>
+          <li><strong>Robustness.</strong> Rankings barely move under other weightings. Spearman correlation with the default ranking: equal weights 0.97, resident measures only 0.98, a 50/50 resident/place split 0.98, adding purchasing power at 10% 0.99.</li>
+        </ol>
+      </div>
+      <div style="display:grid;gap:16px;align-content:start">
+        <div class="table-wrap">
+          <table class="src-table">
+            <thead><tr><th>Measure</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td>Mental, physical health; loneliness, support; food, housing, utility, transport hardship</td><td>CDC PLACES 2025 release (BRFSS 2023); 2024 release (BRFSS 2022) where a state lacked 2023 data</td></tr>
+              <tr><td>Life-satisfaction weights</td><td>CDC BRFSS 2023–2024 microdata, 39 states asking the life-satisfaction question</td></tr>
+              <tr><td>Unemployment, commute, income, rent</td><td>Census ACS 2024 1-year</td></tr>
+              <tr><td>Homicide, violent crime</td><td>crimeindex.org (Real-Time Crime Index), from FBI UCR agency reports, 2023–2025</td></tr>
+              <tr><td>PM2.5</td><td>EPA AQS annual monitor means within 25 km, 2023–2025</td></tr>
+              <tr><td>Climate</td><td>NOAA 1991–2020 normals, nearest first-order station</td></tr>
+              <tr><td>Cost of living</td><td>BEA Regional Price Parities 2024; ACS median gross rent</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:grid;gap:8px">
+          <h3>Limits</h3>
+          <ul class="caveats">
+            <li>PLACES numbers are model-based estimates driven partly by each city's age, race, and education mix. The index describes how a city's residents are doing, which mixes what the place does for people with who chooses to live there.</li>
+            <li>No public source measures life satisfaction city by city, so the index predicts well-being rather than measuring it directly.</li>
+            <li>For TX, FL, TN, WA, and KY, social-needs measures come from the 2022 survey, calibrated to 2023. For CO, OR, PA, and SD (7 cities), they are imputed from other PLACES measures; these cities are flagged.</li>
+            <li>Crime rates use the reporting agency's own population. Las Vegas, Enterprise, and Spring Valley share the Las Vegas Metropolitan Police Department; Honolulu's figure covers the whole island.</li>
+            <li>The weights for place conditions are judgment informed by the literature, not estimates. Use the sliders to test your own.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(function () {
+  "use strict";
+  const DATA = JSON.parse(document.getElementById("data").textContent);
+  const DOMS = DATA.domains;
+  const CITIES = DATA.cities;
+  const KEYS = DOMS.map(d => d.key);
+  const CORE = KEYS.filter(k => k !== "income");
+  const svgNS = "http://www.w3.org/2000/svg";
+  const fmt1 = v => (Math.round(v * 10) / 10).toFixed(1);
+  const signed = v => { const r = Math.round(v * 10) / 10; return r === 0 ? "0.0" : (r > 0 ? "+" : "−") + Math.abs(r).toFixed(1); };
+  const money = v => "$" + Math.round(v).toLocaleString("en-US");
+
+  const DEFAULT_W = Object.fromEntries(DOMS.map(d => [d.key, d.w * 100]));
+  const personKeys = DOMS.filter(d => d.group === "person").map(d => d.key);
+  const placeKeys = DOMS.filter(d => d.group === "place").map(d => d.key);
+  const personTot = personKeys.reduce((s, k) => s + DEFAULT_W[k], 0);
+  const placeTot = placeKeys.reduce((s, k) => s + DEFAULT_W[k], 0);
+  const PRESETS = [
+    { id: "evidence", label: "Evidence-based", w: { ...DEFAULT_W } },
+    { id: "equal", label: "Equal", w: Object.fromEntries(KEYS.map(k => [k, k === "income" ? 0 : 12.5])) },
+    { id: "residents", label: "Residents only", w: Object.fromEntries(KEYS.map(k => [k, personKeys.includes(k) ? DEFAULT_W[k] * 100 / personTot : 0])) },
+    { id: "place", label: "Place-heavy", w: Object.fromEntries(KEYS.map(k => [k, personKeys.includes(k) ? DEFAULT_W[k] * 50 / personTot : placeKeys.includes(k) ? DEFAULT_W[k] * 50 / placeTot : 0])) },
+    { id: "money", label: "+ Purchasing power", w: Object.fromEntries(KEYS.map(k => [k, k === "income" ? 10 : DEFAULT_W[k] * 0.9])) },
+  ];
+
+  const state = { w: { ...DEFAULT_W }, x: "col", region: "All", sel: null, hover: null, sort: { key: "score", dir: -1 }, preset: "evidence" };
+
+  // ---------------------------------------------------------------- scoring
+  function compute() {
+    const tot = KEYS.reduce((s, k) => s + state.w[k], 0) || 1;
+    const comp = CITIES.map(c => KEYS.reduce((s, k) => s + state.w[k] * c.z[k], 0) / tot);
+    const m = comp.reduce((a, b) => a + b, 0) / comp.length;
+    const sd = Math.sqrt(comp.reduce((a, b) => a + (b - m) ** 2, 0) / comp.length) || 1;
+    CITIES.forEach((c, i) => { c.score = 100 + 10 * (comp[i] - m) / sd; c.xv = c[state.x]; });
+    const order = CITIES.slice().sort((a, b) => b.score - a.score);
+    order.forEach((c, i) => { c.rank = i + 1; });
+    const n = CITIES.length, mx = CITIES.reduce((s, c) => s + c.xv, 0) / n, my = 100;
+    let sxy = 0, sxx = 0, syy = 0;
+    CITIES.forEach(c => { sxy += (c.xv - mx) * (c.score - my); sxx += (c.xv - mx) ** 2; syy += (c.score - my) ** 2; });
+    const slope = sxy / sxx, icpt = my - slope * mx;
+    CITIES.forEach(c => { c.resid = c.score - (icpt + slope * c.xv); });
+    const vorder = CITIES.slice().sort((a, b) => b.resid - a.resid);
+    vorder.forEach((c, i) => { c.vrank = i + 1; });
+    return { slope, icpt, r: sxy / Math.sqrt(sxx * syy) };
+  }
+
+  // ---------------------------------------------------------------- weights panel
+  const sliders = {};
+  function buildWeights() {
+    const pr = document.getElementById("presets");
+    PRESETS.forEach(p => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = p.label; b.dataset.id = p.id;
+      b.addEventListener("click", () => { state.w = { ...p.w }; state.preset = p.id; syncSliders(); update(); });
+      pr.appendChild(b);
+    });
+    DOMS.forEach(d => {
+      const g = document.getElementById("g-" + d.group);
+      const row = document.createElement("div"); row.className = "wrow";
+      const lab = document.createElement("label"); lab.htmlFor = "w-" + d.key; lab.textContent = d.label;
+      const out = document.createElement("output"); out.htmlFor = "w-" + d.key; out.id = "o-" + d.key;
+      const inp = document.createElement("input"); inp.type = "range"; inp.id = "w-" + d.key; inp.min = 0; inp.max = 40; inp.step = 0.5;
+      inp.addEventListener("input", () => { state.w[d.key] = +inp.value; state.preset = null; update(); });
+      const sm = document.createElement("small"); sm.textContent = d.desc;
+      row.append(lab, out, inp, sm); g.appendChild(row);
+      sliders[d.key] = { inp, out };
+    });
+    syncSliders();
+  }
+  function syncSliders() {
+    KEYS.forEach(k => { sliders[k].inp.value = state.w[k]; });
+  }
+  function updateWeightLabels() {
+    const tot = KEYS.reduce((s, k) => s + state.w[k], 0) || 1;
+    KEYS.forEach(k => { sliders[k].out.textContent = Math.round(100 * state.w[k] / tot) + "%"; });
+    const pt = Math.round(100 * personKeys.reduce((s, k) => s + state.w[k], 0) / tot);
+    const lt = Math.round(100 * placeKeys.reduce((s, k) => s + state.w[k], 0) / tot);
+    document.querySelector("#g-person .wgroup-title").textContent = "How residents are doing · " + pt + "%";
+    document.querySelector("#g-place .wgroup-title").textContent = "Place conditions · " + lt + "%";
+    document.querySelectorAll("#presets button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.id === state.preset)));
+  }
+
+  // ---------------------------------------------------------------- controls
+  function buildControls() {
+    const dl = document.getElementById("city-list");
+    CITIES.slice().sort((a, b) => a.n.localeCompare(b.n)).forEach(c => { const o = document.createElement("option"); o.value = c.n; dl.appendChild(o); });
+    const q = document.getElementById("q");
+    q.addEventListener("input", () => {
+      const v = q.value.trim().toLowerCase();
+      if (!v) { state.sel = null; update(); return; }
+      const hit = CITIES.find(c => c.n.toLowerCase() === v) || CITIES.find(c => c.n.toLowerCase().startsWith(v));
+      if (hit && (hit.n.toLowerCase() === v || q.value.includes(","))) { selectCity(hit); }
+    });
+    q.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        const v = q.value.trim().toLowerCase();
+        const hit = CITIES.find(c => c.n.toLowerCase().startsWith(v)) || CITIES.find(c => c.n.toLowerCase().includes(v));
+        if (hit) { q.value = hit.n; selectCity(hit); }
+      } else if (e.key === "Escape") { q.value = ""; state.sel = null; update(); }
+    });
+    const reg = document.getElementById("region");
+    ["All", "Northeast", "Midwest", "South", "West"].forEach(r => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = r; b.dataset.r = r;
+      b.setAttribute("aria-pressed", String(r === state.region));
+      b.addEventListener("click", () => { state.region = r; reg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.r === r))); update(); });
+      reg.appendChild(b);
+    });
+    document.querySelectorAll("#xmode button").forEach(b => b.addEventListener("click", () => {
+      state.x = b.dataset.x; document.querySelectorAll("#xmode button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); update();
+    }));
+  }
+  function selectCity(c) {
+    state.sel = c ? c.n : null;
+    if (c && state.region !== "All" && c.reg !== state.region) {
+      state.region = "All";
+      document.querySelectorAll("#region button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.r === "All")));
+    }
+    update();
+  }
+  const inRegion = c => state.region === "All" || c.reg === state.region;
+
+  // ---------------------------------------------------------------- scatter
+  const svg = document.getElementById("scatter");
+  const tip = document.getElementById("tip");
+  const measureCtx = document.createElement("canvas").getContext("2d");
+  function textW(s, weight) { measureCtx.font = (weight || 500) + " 11px 'Public Sans', system-ui, sans-serif"; return measureCtx.measureText(s).width; }
+  function niceTicks(lo, hi, n) {
+    const raw = (hi - lo) / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), e = raw / mag;
+    const step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
+    const t = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) t.push(+v.toFixed(6));
+    return t;
+  }
+  function el(name, attrs, parent) {
+    const e = document.createElementNS(svgNS, name);
+    for (const k in attrs) {
+      const v = attrs[k];
+      if (typeof v === "string" && v.startsWith("var(")) e.style.setProperty(k, v); else e.setAttribute(k, v);
+    }
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  let geom = null, dotEls = new Map();
+  function drawScatter(fit) {
+    const W = svg.clientWidth || 700;
+    const H = Math.max(360, Math.min(600, W * 0.68));
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H);
+    const m = { l: 46, r: 14, t: 14, b: 46 };
+    const xs = CITIES.map(c => c.xv), ys = CITIES.map(c => c.score);
+    const x0 = Math.floor(Math.min(...xs) - 1.5), x1 = Math.ceil(Math.max(...xs) + 1.5);
+    const y0 = Math.floor(Math.min(...ys) - 3), y1 = Math.ceil(Math.max(...ys) + 3);
+    const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+    const Y = v => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+    geom = { W, H, m, X, Y };
+    // static layers rebuilt; dots kept for transitions
+    let g = svg.querySelector("g.frame");
+    if (g) g.remove();
+    g = el("g", { class: "frame" });
+    svg.insertBefore(g, svg.firstChild);
+    niceTicks(y0, y1, 6).forEach(v => {
+      el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), stroke: "var(--grid)", "stroke-width": 1 }, g);
+      const t = el("text", { x: m.l - 8, y: Y(v) + 4, "text-anchor": "end", class: "tick" }, g); t.textContent = v;
+    });
+    niceTicks(x0, x1, Math.max(4, Math.round(W / 110))).forEach(v => {
+      el("line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, stroke: "var(--grid)", "stroke-width": 1 }, g);
+      const t = el("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle", class: "tick" }, g); t.textContent = v;
+    });
+    if (100 > x0 && 100 < x1) el("line", { x1: X(100), x2: X(100), y1: m.t, y2: H - m.b, stroke: "var(--axis)", "stroke-width": 1.25 }, g);
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(100), y2: Y(100), stroke: "var(--axis)", "stroke-width": 1.25 }, g);
+    el("line", { x1: X(x0), x2: X(x1), y1: Y(fit.icpt + fit.slope * x0), y2: Y(fit.icpt + fit.slope * x1), stroke: "var(--muted)", "stroke-width": 1.25 }, g);
+    const xt = el("text", { x: (m.l + W - m.r) / 2, y: H - 8, "text-anchor": "middle", class: "axis-title" }, g);
+    xt.textContent = state.x === "col" ? "Cost of living, city-adjusted (US average = 100)" : "Metro price level, BEA Regional Price Parity (US = 100)";
+    const yt = el("text", { transform: `translate(12 ${(m.t + H - m.b) / 2}) rotate(-90)`, "text-anchor": "middle", class: "axis-title" }, g);
+    yt.textContent = "Well-being index (city avg = 100)";
+    const q1 = el("text", { x: m.l + 8, y: m.t + 14, class: "quad" }, g); q1.textContent = "Higher well-being, lower cost";
+    const q2 = el("text", { x: W - m.r - 8, y: H - m.b - 8, class: "quad", "text-anchor": "end" }, g); q2.textContent = "Lower well-being, higher cost";
+
+    // dots
+    let dg = svg.querySelector("g.dots");
+    if (!dg) dg = el("g", { class: "dots" }, svg);
+    const maxPop = Math.max(...CITIES.map(c => c.pop));
+    const sorted = CITIES.slice().sort((a, b) => b.pop - a.pop);
+    sorted.forEach(c => {
+      let d = dotEls.get(c.n);
+      const r = 3.5 + 13 * Math.sqrt(c.pop / maxPop);
+      if (!d) {
+        d = el("circle", { class: "dot", cx: 0, cy: 0, r: r.toFixed(2) }, dg);
+        dotEls.set(c.n, d);
+      }
+      dg.appendChild(d);
+      c.px = X(c.xv); c.py = Y(c.score); c.r = r;
+      d.style.transform = `translate(${c.px.toFixed(1)}px, ${c.py.toFixed(1)}px)`;
+      const on = inRegion(c);
+      const isSel = state.sel === c.n, isHov = state.hover === c.n;
+      d.style.fill = isSel ? "var(--emph)" : on ? "var(--series)" : "var(--axis)";
+      d.style.fillOpacity = isSel ? 1 : on ? (isHov ? 0.95 : 0.6) : 0.35;
+      d.style.stroke = isHov && !isSel ? "var(--ink)" : "var(--surface)";
+      d.style.strokeWidth = isHov ? 2 : 1.5;
+    });
+    // bring highlighted to front
+    [state.hover, state.sel].forEach(n => { if (n && dotEls.get(n)) dg.appendChild(dotEls.get(n)); });
+    drawLabels();
+  }
+  function drawLabels() {
+    let lg = svg.querySelector("g.labels");
+    if (lg) lg.remove();
+    lg = el("g", { class: "labels", "pointer-events": "none" }, svg);
+    const { W, H, m } = geom;
+    const vis = CITIES.filter(inRegion);
+    const pick = [];
+    const add = c => { if (c && !pick.includes(c)) pick.push(c); };
+    if (state.sel) add(CITIES.find(c => c.n === state.sel));
+    const byScore = vis.slice().sort((a, b) => b.score - a.score);
+    byScore.slice(0, 6).forEach(add);
+    byScore.slice(-5).forEach(add);
+    vis.slice().sort((a, b) => b.pop - a.pop).slice(0, W < 560 ? 4 : 8).forEach(add);
+    const byX = vis.slice().sort((a, b) => a.xv - b.xv);
+    byX.slice(0, 2).forEach(add); byX.slice(-3).forEach(add);
+    const placed = [];
+    const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    const maxLabels = W < 560 ? 12 : 26;
+    let count = 0;
+    pick.forEach(c => {
+      if (count >= maxLabels) return;
+      const isSel = c.n === state.sel;
+      const name = vis.filter(o => o.n.split(",")[0] === c.n.split(",")[0]).length > 1 || isSel ? c.n : c.n.split(",")[0];
+      const tw = textW(name, isSel ? 700 : 500), th = 13, pad = c.r + 3;
+      const cands = [
+        { x: c.px + pad, y: c.py - th / 2 - 1, a: "start" }, { x: c.px - pad - tw, y: c.py - th / 2 - 1, a: "end" },
+        { x: c.px - tw / 2, y: c.py - pad - th, a: "middle" }, { x: c.px - tw / 2, y: c.py + pad, a: "middle" },
+      ];
+      for (const p of cands) {
+        const box = { x: p.x - 2, y: p.y, w: tw + 4, h: th };
+        if (box.x < m.l || box.x + box.w > W - m.r || box.y < m.t || box.y + box.h > H - m.b) continue;
+        if (placed.some(b => overlaps(b, box))) continue;
+        if (!isSel && vis.some(o => o !== c && Math.hypot(o.px - Math.max(box.x, Math.min(o.px, box.x + box.w)), o.py - Math.max(box.y, Math.min(o.py, box.y + box.h))) < o.r * 0.8)) continue;
+        placed.push(box);
+        const tx = p.a === "start" ? p.x : p.a === "end" ? p.x + tw : p.x + tw / 2;
+        const t = el("text", { x: tx, y: p.y + 10, "text-anchor": p.a, class: "lbl" + (isSel ? " sel" : "") }, lg);
+        t.textContent = name; count++;
+        break;
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------- tooltip
+  function fillTip(box, c) {
+    box.replaceChildren();
+    const head = document.createElement("div");
+    const nm = document.createElement("div"); nm.className = "tip-name"; nm.textContent = c.n;
+    const mt = document.createElement("div"); mt.className = "tip-metro"; mt.textContent = c.metro + " · pop. " + c.pop.toLocaleString("en-US");
+    head.append(nm, mt);
+    const k = document.createElement("div"); k.className = "tip-kpis";
+    const kpi = (v, l) => { const d = document.createElement("div"); d.className = "tip-kpi"; const b = document.createElement("b"); b.textContent = v; const s = document.createElement("span"); s.textContent = l; d.append(b, s); return d; };
+    k.append(kpi(fmt1(c.score), "Well-being · #" + c.rank + " of " + CITIES.length), kpi(fmt1(c.xv), (state.x === "col" ? "Cost of living" : "Metro price level") + " · " + signed(c.resid) + " vs. trend"));
+    const rows = document.createElement("div"); rows.className = "dom-rows";
+    DOMS.filter(d => d.key !== "income" || state.w.income > 0).forEach(d => {
+      const z = c.z[d.key];
+      const r = document.createElement("div"); r.className = "dom-row";
+      const l = document.createElement("span"); l.textContent = d.label;
+      const bar = document.createElement("span"); bar.className = "dbar";
+      const i = document.createElement("i");
+      const wpct = Math.min(Math.abs(z), 3) / 3 * 50;
+      i.style.width = wpct + "%"; i.style.left = z >= 0 ? "50%" : (50 - wpct) + "%";
+      i.style.background = z >= 0 ? "var(--pos)" : "var(--neg)";
+      bar.appendChild(i);
+      const v = document.createElement("span"); v.className = "val"; v.textContent = signed(z);
+      r.append(l, bar, v); rows.appendChild(r);
+    });
+    const f = document.createElement("div"); f.className = "tip-facts";
+    const R = c.raw;
+    f.textContent = `Median household income ${money(R.inc)} · median rent ${money(R.rent)}/mo · homicides ${R.murder} and violent crimes ${R.violent.toLocaleString("en-US")} per 100k · commute ${R.commute} min · PM2.5 ${R.pm25} µg/m³ · lonely ${R.lonely}% · frequent mental distress ${R.fmd}%`;
+    box.append(head, k, rows, f);
+    if (c.src.social && c.src.social.startsWith("Imputed")) {
+      const fl = document.createElement("div"); fl.className = "tip-flag"; fl.textContent = "Social-needs measures imputed: no CDC estimate for this state.";
+      box.appendChild(fl);
+    }
+  }
+  function showTip(c) {
+    if (!c) { tip.hidden = true; return; }
+    fillTip(tip, c);
+    tip.hidden = false;
+    const card = svg.parentElement, sr = svg.getBoundingClientRect(), cr = card.getBoundingClientRect();
+    const scale = sr.width / geom.W;
+    const px = sr.left - cr.left + c.px * scale, py = sr.top - cr.top + c.py * scale;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = px + c.r + 14;
+    if (left + tw > cr.width - 8) left = px - c.r - 14 - tw;
+    if (left < 8) left = Math.max(8, Math.min(cr.width - tw - 8, px - tw / 2));
+    let top = Math.max(8, Math.min(py - th / 2, cr.height - th - 8));
+    tip.style.left = left + "px"; tip.style.top = top + "px";
+  }
+  function nearest(evt) {
+    const sr = svg.getBoundingClientRect(), scale = sr.width / geom.W;
+    const mx = (evt.clientX - sr.left) / scale, my = (evt.clientY - sr.top) / scale;
+    let best = null, bd = Infinity;
+    CITIES.forEach(c => { if (!inRegion(c)) return; const d = Math.hypot(c.px - mx, c.py - my) - c.r; if (d < bd) { bd = d; best = c; } });
+    return bd < 18 / scale + 6 ? best : null;
+  }
+  svg.addEventListener("pointermove", e => {
+    if (e.pointerType === "touch") return;
+    const c = nearest(e);
+    const n = c ? c.n : null;
+    if (n !== state.hover) { state.hover = n; drawScatter(lastFit); }
+    showTip(c || (state.sel ? CITIES.find(x => x.n === state.sel) : null));
+    svg.style.cursor = c ? "pointer" : "default";
+  });
+  svg.addEventListener("pointerleave", () => {
+    state.hover = null; drawScatter(lastFit);
+    showTip(state.sel ? CITIES.find(x => x.n === state.sel) : null);
+  });
+  svg.addEventListener("click", e => {
+    const c = nearest(e);
+    document.getElementById("q").value = c ? c.n : "";
+    selectCity(c && c.n !== state.sel ? c : null);
+  });
+
+  // ---------------------------------------------------------------- table
+  const COLS = [
+    { key: "rank", label: "#", get: c => c.rank, f: v => v },
+    { key: "n", label: "City", get: c => c.n, f: v => v, str: true },
+    { key: "score", label: "Well-being", get: c => c.score, f: fmt1 },
+    { key: "xv", label: "Cost", get: c => c.xv, f: fmt1 },
+    { key: "resid", label: "Vs. trend", get: c => c.resid, f: signed },
+    ...CORE.map(k => ({ key: "z_" + k, label: DOMS.find(d => d.key === k).label.replace(" health", "").replace("Economic security", "Economic").replace("Social connection", "Social").replace("Air quality", "Air"), get: c => c.z[k], f: signed, z: true })),
+    { key: "inc", label: "Income", get: c => c.raw.inc, f: v => "$" + Math.round(v / 1000) + "k" },
+    { key: "pop", label: "Population", get: c => c.pop, f: v => v.toLocaleString("en-US") },
+  ];
+  function buildTableHead() {
+    const tr = document.createElement("tr");
+    COLS.forEach(col => {
+      const th = document.createElement("th"); th.scope = "col";
+      const b = document.createElement("button"); b.type = "button"; b.textContent = col.label;
+      b.addEventListener("click", () => {
+        if (state.sort.key === col.key) state.sort.dir *= -1; else state.sort = { key: col.key, dir: col.str || col.key === "rank" ? 1 : -1 };
+        drawTable();
+      });
+      b.dataset.key = col.key; th.appendChild(b); tr.appendChild(th);
+    });
+    document.querySelector("#tbl thead").appendChild(tr);
+  }
+  function drawTable() {
+    const tb = document.querySelector("#tbl tbody");
+    tb.replaceChildren();
+    const col = COLS.find(c => c.key === state.sort.key);
+    const rows = CITIES.filter(inRegion).sort((a, b) => {
+      const va = col.get(a), vb = col.get(b);
+      return (col.str ? String(va).localeCompare(String(vb)) : va - vb) * state.sort.dir;
+    });
+    document.querySelectorAll("#tbl th button").forEach(b => {
+      const on = b.dataset.key === state.sort.key;
+      b.dataset.active = String(on);
+      b.parentElement.setAttribute("aria-sort", on ? (state.sort.dir > 0 ? "ascending" : "descending") : "none");
+    });
+    rows.forEach(c => {
+      const tr = document.createElement("tr");
+      if (c.n === state.sel) tr.className = "is-sel";
+      COLS.forEach(cl => {
+        const td = document.createElement("td");
+        const v = cl.get(c);
+        td.textContent = cl.f(v);
+        if (cl.z) {
+          td.className = "z";
+          const a = Math.min(Math.abs(v), 2.5) / 2.5 * 32;
+          td.style.background = `color-mix(in oklab, ${v >= 0 ? "var(--pos)" : "var(--neg)"} ${a.toFixed(0)}%, transparent)`;
+        }
+        if (cl.key === "n" && c.src.social && c.src.social.startsWith("Imputed")) {
+          const s = document.createElement("span"); s.className = "flag"; s.textContent = " †"; s.title = "Social-needs measures imputed"; td.appendChild(s);
+        }
+        tr.appendChild(td);
+      });
+      tr.addEventListener("click", () => {
+        document.getElementById("q").value = c.n; selectCity(c);
+        svg.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+      });
+      tb.appendChild(tr);
+    });
+  }
+
+  // ---------------------------------------------------------------- factor chart
+  const fsvg = document.getElementById("factors"), ftip = document.getElementById("ftip");
+  function drawFactors() {
+    const F = DATA.factors;
+    const W = fsvg.clientWidth || 600;
+    const narrow = W < 520;
+    const labW = narrow ? 150 : 210, rowH = 26, m = { t: 6, r: 14, b: 34, l: labW };
+    const H = m.t + m.b + rowH * F.length;
+    fsvg.setAttribute("viewBox", `0 0 ${W} ${H}`); fsvg.setAttribute("height", H);
+    fsvg.replaceChildren();
+    const lo = -0.9, hi = 0.45;
+    const X = v => m.l + (v - lo) / (hi - lo) * (W - m.l - m.r);
+    [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4].forEach(v => {
+      el("line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": v === 0 ? 1.25 : 1 }, fsvg);
+      const t = el("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle", class: "tick" }, fsvg);
+      t.textContent = v === 0 ? "0" : (v > 0 ? "+" : "−") + Math.abs(v).toFixed(1);
+    });
+    const at = el("text", { x: (m.l + W - m.r) / 2, y: H - 4, "text-anchor": "middle", class: "axis-title" }, fsvg);
+    at.textContent = "Standard deviations of life satisfaction";
+    F.forEach((f, i) => {
+      const y = m.t + i * rowH + rowH / 2;
+      const lab = el("text", { x: m.l - 10, y: y + 4, "text-anchor": "end", class: "tick", style: "fill:var(--ink-2);font-size:12px" }, fsvg);
+      let name = f.label;
+      if (narrow && name.length > 24) name = name.replace("Couldn't pay rent/mortgage/utilities", "Couldn't pay housing bills").replace("Lacks social & emotional support", "Lacks emotional support").replace("Lacks reliable transportation", "Lacks transportation");
+      lab.textContent = name;
+      const x0 = X(Math.min(0, f.sd)), w = Math.abs(X(f.sd) - X(0));
+      const bh = 12;
+      el("rect", { x: x0, y: y - bh / 2, width: Math.max(w, 1), height: bh, rx: 3, fill: f.sd < 0 ? "var(--neg)" : "var(--pos)" }, fsvg);
+      el("line", { x1: X(f.sd - 1.96 * f.se), x2: X(f.sd + 1.96 * f.se), y1: y, y2: y, stroke: "var(--ink)", "stroke-opacity": 0.55, "stroke-width": 1 }, fsvg);
+      el("line", { x1: X(f.alone), x2: X(f.alone), y1: y - 8, y2: y + 8, stroke: "var(--ink)", "stroke-width": 2, "stroke-linecap": "round" }, fsvg);
+      const hit = el("rect", { x: 0, y: y - rowH / 2, width: W, height: rowH, fill: "transparent", tabindex: 0, "aria-label": `${f.label}: ${f.sd} SD` }, fsvg);
+      const show = () => {
+        ftip.replaceChildren();
+        const a = document.createElement("div"); a.className = "tip-name"; a.textContent = f.label;
+        const b = document.createElement("div"); b.className = "tip-kpis";
+        const mk = (v, l) => { const d = document.createElement("div"); d.className = "tip-kpi"; const s = document.createElement("b"); s.textContent = v; const t = document.createElement("span"); t.textContent = l; d.append(s, t); return d; };
+        b.append(mk((f.sd >= 0 ? "+" : "−") + Math.abs(f.sd).toFixed(2), "SD, other factors held constant"), mk((f.dissat_pp >= 0 ? "+" : "−") + Math.abs(f.dissat_pp).toFixed(1) + " pts", "chance of being dissatisfied"));
+        const c = document.createElement("div"); c.className = "tip-facts"; c.textContent = `On its own: ${(f.alone >= 0 ? "+" : "−") + Math.abs(f.alone).toFixed(2)} SD. 95% CI ${(f.sd - 1.96 * f.se).toFixed(2)} to ${(f.sd + 1.96 * f.se).toFixed(2)}.`;
+        ftip.append(a, b, c); ftip.hidden = false;
+        const sr = fsvg.getBoundingClientRect(), cr = fsvg.parentElement.getBoundingClientRect(), sc = sr.width / W;
+        const top = sr.top - cr.top + (y + rowH / 2) * sc + 6;
+        ftip.style.top = Math.min(top, cr.height - ftip.offsetHeight - 8) + "px";
+        ftip.style.left = Math.max(8, Math.min(cr.width - ftip.offsetWidth - 8, sr.left - cr.left + X(f.sd) * sc - ftip.offsetWidth / 2)) + "px";
+      };
+      hit.addEventListener("pointerenter", show); hit.addEventListener("focus", show);
+      hit.addEventListener("pointerleave", () => { ftip.hidden = true; }); hit.addEventListener("blur", () => { ftip.hidden = true; });
+    });
+  }
+
+  // ---------------------------------------------------------------- findings
+  function fillFindings(fit) {
+    document.getElementById("f-r").textContent = "r = " + fit.r.toFixed(2);
+    const v = CITIES.slice().sort((a, b) => b.resid - a.resid);
+    const top = v.slice(0, 6).map(c => c.n.split(",")[0]);
+    const bot = v.slice(-5).reverse().map(c => c.n.split(",")[0]);
+    document.getElementById("f-best").textContent = top[0];
+    document.getElementById("f-best-p").textContent = `Most well-being for the cost: ${top.join(", ")}. Least: ${bot.join(", ")}. Large affluent suburbs and mid-size cities of the Plains and Mountain West do best; older industrial cores and the Inland Empire do worst.`;
+  }
+
+  // ---------------------------------------------------------------- update loop
+  let lastFit = null;
+  function update() {
+    lastFit = compute();
+    updateWeightLabels();
+    drawScatter(lastFit);
+    document.getElementById("chart-sub").textContent = `r = ${lastFit.r.toFixed(2)} · trend ${lastFit.slope >= 0 ? "+" : "−"}${Math.abs(lastFit.slope).toFixed(2)} well-being points per cost point`;
+    showTip(state.sel ? CITIES.find(c => c.n === state.sel) : null);
+    drawTable();
+  }
+
+  buildWeights();
+  buildControls();
+  buildTableHead();
+  update();
+  fillFindings(lastFit);
+  drawFactors();
+  let rt;
+  const ro = new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { drawScatter(lastFit); drawFactors(); showTip(state.sel ? CITIES.find(c => c.n === state.sel) : null); }, 80); });
+  ro.observe(svg); ro.observe(fsvg);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawScatter(lastFit); });
+})();
+</script>

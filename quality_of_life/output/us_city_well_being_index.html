@@ -1,0 +1,779 @@
+<title>US City Well-Being Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap">
+<style>
+/* Layout: one reading column (max 1180px); the explorer is a two-track grid (chart | weight panel) that stacks below 900px. */
+:root {
+  --bg: #f6f6f2;
+  --surface: #fcfcfb;
+  --ink: #111110;
+  --ink-2: #52514e;
+  --muted: #7d7b75;
+  --grid: #e4e3dc;
+  --axis: #c3c2b7;
+  --line: rgba(17, 17, 16, 0.10);
+  --series: #2a78d6;
+  --emph: #eb6834;
+  --pos: #2a78d6;
+  --neg: #e34948;
+  --mid: #f0efec;
+  --chip: #ebeae4;
+  --font: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-xs: 0.75rem; --fs-sm: 0.8125rem; --fs-base: 0.9375rem; --fs-md: 1.0625rem; --fs-lg: 1.375rem; --fs-xl: clamp(1.9rem, 4vw, 2.75rem);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f0e; --surface: #1a1a19; --ink: #f4f4f1; --ink-2: #c3c2b7; --muted: #95938c; --grid: #2c2c2a;
+    --axis: #45443f; --line: rgba(255, 255, 255, 0.10); --series: #3987e5; --emph: #d95926; --pos: #3987e5;
+    --neg: #e66767; --mid: #383835; --chip: #262624; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f0e; --surface: #1a1a19; --ink: #f4f4f1; --ink-2: #c3c2b7; --muted: #95938c; --grid: #2c2c2a;
+  --axis: #45443f; --line: rgba(255, 255, 255, 0.10); --series: #3987e5; --emph: #d95926; --pos: #3987e5;
+  --neg: #e66767; --mid: #383835; --chip: #262624; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: var(--fs-base); line-height: 1.55; }
+.wrap > *, .explorer > *, .table-sec > *, .explorer-grid > *, .drivers-grid > *, .method-grid > * { min-width: 0; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; display: grid; gap: 40px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: var(--fs-xl); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: var(--fs-lg); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: var(--fs-md); font-weight: 700; }
+p { margin: 0; }
+a { color: var(--series); }
+.eyebrow { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.dek { font-size: var(--fs-md); color: var(--ink-2); max-width: 68ch; }
+header { display: grid; gap: 10px; }
+.prose { max-width: 70ch; display: grid; gap: 12px; color: var(--ink-2); }
+.prose strong { color: var(--ink); }
+
+/* Findings */
+.findings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; border-top: 1px solid var(--line); padding-top: 20px; }
+.finding { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.finding h3 { font-size: var(--fs-base); }
+.finding p { color: var(--ink-2); font-size: var(--fs-sm); }
+.finding .figure-num { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); line-height: 1.1; }
+@media (max-width: 760px) { .findings { grid-template-columns: minmax(0, 1fr); } }
+
+/* Controls */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > span { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+input[type="search"], select { font: inherit; font-size: var(--fs-sm); color: var(--ink); background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; padding: 7px 10px; min-width: 0; }
+input[type="search"] { width: 15rem; max-width: 100%; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--series); outline-offset: 2px; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--chip); border-radius: 9px; padding: 3px; gap: 2px; }
+.seg button { font: inherit; font-size: var(--fs-sm); border: 0; background: transparent; color: var(--ink-2); padding: 5px 11px; border-radius: 7px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+.seg button:hover { color: var(--ink); }
+
+/* Explorer */
+.explorer { display: grid; gap: 16px; }
+.explorer-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .explorer-grid { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.chart-card { padding: 16px 16px 8px; position: relative; min-width: 0; }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; align-items: baseline; margin-bottom: 6px; }
+.chart-head p { color: var(--muted); font-size: var(--fs-sm); }
+#scatter { display: block; width: 100%; touch-action: manipulation; }
+#scatter text { font-family: var(--font); }
+.tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.axis-title { fill: var(--ink-2); font-size: 12px; font-weight: 500; }
+.quad { fill: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+.lbl { fill: var(--ink-2); font-size: 11px; font-weight: 500; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.lbl.sel { fill: var(--ink); font-weight: 700; }
+.dot { transition: transform 420ms cubic-bezier(.2,.7,.2,1), opacity 200ms; }
+@media (prefers-reduced-motion: reduce) { .dot { transition: none; } }
+.chart-note { font-size: var(--fs-xs); color: var(--muted); padding: 4px 2px 6px; }
+
+/* Tooltip */
+.tip { position: absolute; z-index: 5; pointer-events: none; width: 286px; max-width: calc(100% - 16px); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.14); padding: 12px 14px; font-size: var(--fs-sm); display: grid; gap: 8px; }
+.tip-name { font-weight: 700; font-size: var(--fs-base); line-height: 1.25; }
+.tip-metro { color: var(--muted); font-size: var(--fs-xs); }
+.tip-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tip-kpi b { display: block; font-size: 1.25rem; font-weight: 700; line-height: 1.1; }
+.tip-kpi span { color: var(--muted); font-size: var(--fs-xs); }
+.dom-rows { display: grid; gap: 3px; }
+.dom-row { display: grid; grid-template-columns: 7.2rem 1fr 2.6rem; gap: 8px; align-items: center; font-size: var(--fs-xs); color: var(--ink-2); }
+.dom-row .val { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+.dbar { position: relative; height: 8px; }
+.dbar::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--axis); }
+.dbar i { position: absolute; top: 0; height: 8px; border-radius: 2px; }
+.tip-facts { color: var(--ink-2); font-size: var(--fs-xs); line-height: 1.5; border-top: 1px solid var(--line); padding-top: 7px; }
+.tip-flag { color: var(--muted); font-size: var(--fs-xs); font-style: italic; }
+
+/* Weights panel */
+.weights { padding: 16px; display: grid; gap: 14px; }
+.weights h3 { font-size: var(--fs-base); }
+.weights .hint { font-size: var(--fs-xs); color: var(--muted); }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.presets button { font: inherit; font-size: var(--fs-xs); font-weight: 600; border: 1px solid var(--axis); background: var(--surface); color: var(--ink-2); padding: 5px 9px; border-radius: 999px; cursor: pointer; }
+.presets button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.wgroup { display: grid; gap: 10px; }
+.wgroup-title { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.wrow { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+.wrow label { font-size: var(--fs-sm); font-weight: 600; }
+.wrow output { font-size: var(--fs-sm); font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; min-width: 2.6rem; text-align: right; }
+.wrow input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: var(--series); margin: 0; }
+.wrow small { grid-column: 1 / -1; color: var(--muted); font-size: var(--fs-xs); line-height: 1.35; }
+
+/* Table */
+.table-sec { display: grid; gap: 12px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:nth-child(2), td:nth-child(2) { text-align: left; }
+th { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; vertical-align: bottom; position: sticky; top: 0; background: var(--surface); }
+th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }
+th button[data-active="true"] { color: var(--ink); }
+td.z { min-width: 3.4rem; }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: color-mix(in oklab, var(--series) 6%, transparent); }
+tbody tr.is-sel td { background: color-mix(in oklab, var(--emph) 14%, transparent); }
+.flag { color: var(--muted); font-size: var(--fs-xs); }
+.table-card { padding: 4px 8px 8px; }
+.table-card .table-wrap { max-height: 640px; overflow: auto; }
+
+/* Drivers */
+.drivers-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 900px) { .drivers-grid { grid-template-columns: minmax(0, 1fr); } }
+.factor-card { padding: 16px; position: relative; min-width: 0; }
+#factors { display: block; width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: var(--fs-xs); color: var(--ink-2); margin: 4px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key-bar { width: 12px; height: 8px; border-radius: 2px; background: var(--neg); display: inline-block; }
+.key-bar.pos { background: var(--pos); }
+.key-tick { width: 2px; height: 12px; background: var(--ink); display: inline-block; }
+.evidence { display: grid; gap: 14px; }
+.evidence dl { margin: 0; display: grid; gap: 10px; }
+.evidence dt { font-weight: 700; color: var(--ink); font-size: var(--fs-sm); }
+.evidence dd { margin: 0; color: var(--ink-2); font-size: var(--fs-sm); }
+
+/* Method */
+.method-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+@media (max-width: 900px) { .method-grid { grid-template-columns: minmax(0, 1fr); } }
+.method ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 8px; color: var(--ink-2); font-size: var(--fs-sm); }
+.src-table td, .src-table th { white-space: normal; text-align: left; vertical-align: top; }
+.src-table th { position: static; background: none; }
+.caveats { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; color: var(--ink-2); font-size: var(--fs-sm); }
+section > h2 + .prose, section > h2 + p { margin-top: 8px; }
+.section-head { display: grid; gap: 6px; }
+.section-head p { color: var(--ink-2); max-width: 75ch; }
+</style>
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">130 largest US cities · data through 2025</p>
+    <h1>US City Well-Being Index</h1>
+    <p class="dek">A city score built from the conditions that most predict how satisfied people are with their lives, plotted against what it costs to live there.</p>
+  </header>
+
+  <section class="findings" aria-label="Key findings">
+    <div class="finding">
+      <p class="figure-num" id="f-r">r = 0.15</p>
+      <h3>Cost barely predicts well-being</h3>
+      <p>Across these cities, a higher price level buys almost nothing on this index. Expensive coastal cities are spread from top to bottom, and so are cheap ones.</p>
+    </div>
+    <div class="finding">
+      <p class="figure-num">&minus;0.45 SD</p>
+      <h3>Relationships and mental health matter most</h3>
+      <p>In 325,940 CDC survey respondents, lacking emotional support, frequent mental distress, and loneliness each lower life satisfaction about 0.4 standard deviations. Doubling household income raises it 0.05.</p>
+    </div>
+    <div class="finding">
+      <p class="figure-num" id="f-best">Overland Park</p>
+      <h3 id="f-best-h">Best value: suburbs and the interior</h3>
+      <p id="f-best-p"></p>
+    </div>
+  </section>
+
+  <section class="explorer" aria-labelledby="explorer-h">
+    <div class="section-head">
+      <h2 id="explorer-h">Well-being against cost of living</h2>
+      <p>Hover or tap a city for its breakdown. Drag the weights to build your own index; scores, ranks, the trend line, and the table all update together.</p>
+    </div>
+    <div class="controls">
+      <label class="field"><span>Find a city</span>
+        <input type="search" id="q" list="city-list" placeholder="e.g. Denver, CO" autocomplete="off">
+        <datalist id="city-list"></datalist>
+      </label>
+      <div class="field"><span>Region</span>
+        <div class="seg" id="region" role="group" aria-label="Region filter"></div>
+      </div>
+      <div class="field"><span>Cost measure</span>
+        <div class="seg" id="xmode" role="group" aria-label="Cost measure">
+          <button type="button" data-x="col" aria-pressed="true">City-adjusted</button>
+          <button type="button" data-x="rpp" aria-pressed="false">Metro (BEA)</button>
+        </div>
+      </div>
+    </div>
+    <div class="explorer-grid">
+      <figure class="card chart-card" style="margin:0">
+        <div class="chart-head">
+          <h3 id="chart-title">Each dot is a city, sized by population</h3>
+          <p id="chart-sub"></p>
+        </div>
+        <svg id="scatter" role="img" aria-labelledby="chart-title chart-sub"></svg>
+        <div class="tip" id="tip" hidden></div>
+        <p class="chart-note">Horizontal line: average of the 130 cities. Vertical line: US average price level. Sloped line: least-squares trend. Faded dots are outside the region filter.</p>
+      </figure>
+      <aside class="card weights" aria-labelledby="w-h">
+        <div style="display:grid;gap:4px">
+          <h3 id="w-h">Index weights</h3>
+          <p class="hint">Shares of the index. Defaults come from the life-satisfaction model (resident measures) and the research literature (place measures).</p>
+        </div>
+        <div class="presets" id="presets" role="group" aria-label="Weight presets"></div>
+        <div class="wgroup" id="g-person"><div class="wgroup-title">How residents are doing · 70%</div></div>
+        <div class="wgroup" id="g-place"><div class="wgroup-title">Place conditions · 30%</div></div>
+        <div class="wgroup" id="g-optional"><div class="wgroup-title">Optional</div></div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="table-sec" aria-labelledby="table-h">
+    <div class="section-head">
+      <h2 id="table-h">All cities</h2>
+      <p>Domain columns are standardized scores: 0 is the 130-city average, +1 is one standard deviation better. "Vs. trend" is how far a city sits above or below the cost trend line. Click a column to sort, or a row to find the city on the chart.</p>
+    </div>
+    <div class="card table-card"><div class="table-wrap"><table id="tbl"><thead></thead><tbody></tbody></table></div></div>
+  </section>
+
+  <section aria-labelledby="drivers-h" style="display:grid;gap:16px">
+    <div class="section-head">
+      <h2 id="drivers-h">What drives well-being</h2>
+      <p>The resident measures and their weights come from a survey-weighted regression of life satisfaction in the CDC's Behavioral Risk Factor Surveillance System (BRFSS), 2023–2024, with age, sex, race, education, and state-by-year controls. Place factors are not in that survey, so their weights rest on published studies.</p>
+    </div>
+    <div class="drivers-grid">
+      <div class="card factor-card">
+        <h3>Effect on life satisfaction, in standard deviations</h3>
+        <div class="legend" aria-hidden="true">
+          <span><i class="key-bar"></i><i class="key-bar pos"></i>Holding the other factors constant (95% CI)</span>
+          <span><i class="key-tick"></i>On its own, demographic controls only</span>
+        </div>
+        <svg id="factors" role="img" aria-label="Bar chart of factor effects on life satisfaction"></svg>
+        <div class="tip" id="ftip" hidden></div>
+      </div>
+      <div class="evidence">
+        <dl>
+          <dt>Social connection carries the most weight</dt>
+          <dd>Lacking emotional support and loneliness are the two largest effects in the model, and they also vary a lot between cities. This matches a long research record: social relationships are among the strongest correlates of happiness (Helliwell &amp; Putnam, 2004) and of survival (Holt-Lunstad et al., 2010).</dd>
+          <dt>Mental and physical health come next</dt>
+          <dd>Frequent mental distress is the single biggest predictor of being dissatisfied with life (+11 percentage points). Clark et al. (<i>The Origins of Happiness</i>, 2018) find mental illness explains more of the variation in life satisfaction than income does.</dd>
+          <dt>Work and money matter, with diminishing returns</dt>
+          <dd>Unemployment hurts beyond the lost pay (Clark &amp; Oswald, 1994), and so does material hardship: not covering rent or utilities, or lacking transportation. Income itself has a small, log-shaped effect (Kahneman &amp; Deaton, 2010). People also compare themselves with neighbors (Luttmer, 2005), so a city's average income adds little to average well-being. That is why purchasing power is off by default.</dd>
+          <dt>Place conditions: safety, commute, air, climate</dt>
+          <dd>Commuting is the least enjoyed part of most people's day (Kahneman et al., 2004), and longer commutes lower life satisfaction (Stutzer &amp; Frey, 2008). Crime lowers well-being through victimization and fear (Cohen, 2008). Fine-particle pollution lowers reported happiness (Levinson, 2012). Americans prefer mild climates, around 65&nbsp;°F (Albouy et al., 2016), but climate effects on well-being are modest, so it gets a small weight.</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="method" aria-labelledby="method-h" style="display:grid;gap:16px">
+    <h2 id="method-h">How the index is built</h2>
+    <div class="method-grid">
+      <div style="display:grid;gap:16px;align-content:start">
+        <ol>
+          <li><strong>Cities.</strong> Every Census place with 200,000+ residents in the 2024 American Community Survey: 130 cities, measured within city limits.</li>
+          <li><strong>Resident measures.</strong> CDC PLACES age-adjusted estimates for each city. Each domain's score is the life satisfaction the BRFSS model predicts from the city's prevalence of those conditions.</li>
+          <li><strong>Resident weights.</strong> A domain's weight is proportional to how much its predicted life satisfaction varies across the 130 cities. Social connection varies most (28%), then physical health (18%), economic security (16%), and mental health (8%). Together they make up 70%.</li>
+          <li><strong>Place weights.</strong> Safety 15%, commute 7%, air quality 4%, climate 4%, set from the studies above. Safety averages log homicide and log violent-crime rates.</li>
+          <li><strong>Scaling.</strong> Each domain is standardized across the cities, combined with the weights, and rescaled so the 130-city average is 100 and one standard deviation is 10.</li>
+          <li><strong>Cost of living.</strong> BEA 2024 Regional Price Parities for the city's metro area (US = 100). The housing component (17% of spending) is rescaled by the city's median rent relative to its metro, so Irvine and Santa Ana, which share a metro, get different costs.</li>
+          <li><strong>Robustness.</strong> Rankings barely move under other weightings. Spearman correlation with the default ranking: equal weights 0.97, resident measures only 0.98, a 50/50 resident/place split 0.98, adding purchasing power at 10% 0.99.</li>
+        </ol>
+      </div>
+      <div style="display:grid;gap:16px;align-content:start">
+        <div class="table-wrap">
+          <table class="src-table">
+            <thead><tr><th>Measure</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td>Mental, physical health; loneliness, support; food, housing, utility, transport hardship</td><td>CDC PLACES 2025 release (BRFSS 2023); 2024 release (BRFSS 2022) where a state lacked 2023 data</td></tr>
+              <tr><td>Life-satisfaction weights</td><td>CDC BRFSS 2023–2024 microdata, 39 states asking the life-satisfaction question</td></tr>
+              <tr><td>Unemployment, commute, income, rent</td><td>Census ACS 2024 1-year</td></tr>
+              <tr><td>Homicide, violent crime</td><td>crimeindex.org (Real-Time Crime Index), from FBI UCR agency reports, 2023–2025</td></tr>
+              <tr><td>PM2.5</td><td>EPA AQS annual monitor means within 25 km, 2023–2025</td></tr>
+              <tr><td>Climate</td><td>NOAA 1991–2020 normals, nearest first-order station</td></tr>
+              <tr><td>Cost of living</td><td>BEA Regional Price Parities 2024; ACS median gross rent</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:grid;gap:8px">
+          <h3>Limits</h3>
+          <ul class="caveats">
+            <li>PLACES numbers are model-based estimates driven partly by each city's age, race, and education mix. The index describes how a city's residents are doing, which mixes what the place does for people with who chooses to live there.</li>
+            <li>No public source measures life satisfaction city by city, so the index predicts well-being rather than measuring it directly.</li>
+            <li>For TX, FL, TN, WA, and KY, social-needs measures come from the 2022 survey, calibrated to 2023. For CO, OR, PA, and SD (7 cities), they are imputed from other PLACES measures; these cities are flagged.</li>
+            <li>Crime rates use the reporting agency's own population. Las Vegas, Enterprise, and Spring Valley share the Las Vegas Metropolitan Police Department; Honolulu's figure covers the whole island.</li>
+            <li>The weights for place conditions are judgment informed by the literature, not estimates. Use the sliders to test your own.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="application/json" id="data">{"domains":[{"key":"mental","label":"Mental health","desc":"Frequent mental distress (14+ bad days a month)","w":0.0841,"group":"person"},{"key":"physical","label":"Physical health","desc":"Fair/poor self-rated health; frequent physical distress","w":0.1756,"group":"person"},{"key":"social","label":"Social connection","desc":"Loneliness; lacking social and emotional support","w":0.2821,"group":"person"},{"key":"economic","label":"Economic security","desc":"Housing insecurity, utility shut-off threats, transport barriers, food insecurity, unemployment","w":0.1583,"group":"person"},{"key":"safety","label":"Safety","desc":"Homicide and violent-crime rates, 2023-2025","w":0.15,"group":"place"},{"key":"commute","label":"Commute","desc":"Mean one-way commute time","w":0.07,"group":"place"},{"key":"air","label":"Air quality","desc":"Fine-particle (PM2.5) pollution, 2023-2025","w":0.04,"group":"place"},{"key":"climate","label":"Climate","desc":"Heating + cooling degree days, 1991-2020 normals","w":0.04,"group":"place"},{"key":"income","label":"Purchasing power","desc":"Median household income adjusted for local prices (off by default)","w":0.0,"group":"optional"}],"cities":[{"n":"New York, NY","st":"NY","reg":"Northeast","pop":8478072,"col":112.0,"rpp":112.6,"metro":"New York-Newark-Jersey City, NY-NJ","z":{"mental":1.018,"physical":0.137,"social":-1.357,"economic":-0.55,"safety":0.126,"commute":-3.108,"air":0.121,"climate":-0.433,"income":-0.338},"raw":{"inc":81228,"rent":1811,"unemp":6.9,"fmd":15.5,"fph":20.5,"lonely":38.5,"nosup":31.0,"housins":20.1,"foodins":24.6,"murder":3.9,"violent":673,"commute":40.6,"pm25":8.0,"dd":5775,"hdd":4553,"cdd":1222},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Los Angeles, CA","st":"CA","reg":"West","pop":3878718,"col":111.4,"rpp":113.6,"metro":"Los Angeles-Long Beach-Anaheim, CA","z":{"mental":0.011,"physical":-0.851,"social":-1.808,"economic":-0.408,"safety":-0.276,"commute":-1.295,"air":-1.798,"climate":2.271,"income":-0.254},"raw":{"inc":82263,"rent":1958,"unemp":6.7,"fmd":17.3,"fph":25.1,"lonely":41.0,"nosup":31.2,"housins":19.4,"foodins":23.6,"murder":7.1,"violent":739,"commute":31.7,"pm25":11.2,"dd":2001,"hdd":1388,"cdd":613},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Chicago, IL","st":"IL","reg":"Midwest","pop":2721326,"col":103.8,"rpp":103.6,"metro":"Chicago-Naperville-Elgin, IL-IN","z":{"mental":0.906,"physical":0.015,"social":-0.281,"economic":-0.639,"safety":-1.116,"commute":-1.668,"air":-0.491,"climate":-1.213,"income":-0.022},"raw":{"inc":80613,"rent":1486,"unemp":7.3,"fmd":15.7,"fph":21.5,"lonely":35.3,"nosup":28.1,"housins":19.7,"foodins":24.4,"murder":22.9,"violent":876,"commute":33.5,"pm25":9.0,"dd":6864,"hdd":5753,"cdd":1111},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2022-2024"}},{"n":"Houston, TX","st":"TX","reg":"South","pop":2387910,"col":97.9,"rpp":98.6,"metro":"Houston-Pasadena-The Woodlands, TX","z":{"mental":0.29,"physical":-0.692,"social":-0.731,"economic":-1.291,"safety":-0.92,"commute":-0.596,"air":-1.141,"climate":0.509,"income":-0.791},"raw":{"inc":64361,"rent":1408,"unemp":6.4,"fmd":16.8,"fph":24.5,"lonely":38.0,"nosup":28.1,"housins":22.7,"foodins":29.5,"murder":13.5,"violent":1041,"commute":28.2,"pm25":10.1,"dd":4460,"hdd":1098,"cdd":3362},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Phoenix, AZ","st":"AZ","reg":"West","pop":1673122,"col":102.1,"rpp":103.3,"metro":"Phoenix-Mesa-Chandler, AZ","z":{"mental":0.738,"physical":0.091,"social":0.222,"economic":0.191,"safety":-0.441,"commute":-0.288,"air":-0.328,"climate":0.004,"income":0.314},"raw":{"inc":85246,"rent":1712,"unemp":4.1,"fmd":16.0,"fph":20.9,"lonely":33.4,"nosup":27.1,"housins":15.8,"foodins":21.2,"murder":9.1,"violent":760,"commute":26.7,"pm25":8.7,"dd":5165,"hdd":1202,"cdd":3963},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Philadelphia, PA","st":"PA","reg":"Northeast","pop":1573916,"col":101.7,"rpp":102.6,"metro":"Philadelphia-Camden-Wilmington, PA-NJ-DE-MD","z":{"mental":-0.638,"physical":-0.978,"social":-0.981,"economic":-0.961,"safety":-1.039,"commute":-1.6,"air":-0.375,"climate":-0.48,"income":-1.254},"raw":{"inc":60521,"rent":1500,"unemp":5.9,"fmd":18.5,"fph":25.7,"lonely":38.5,"nosup":29.0,"housins":21.0,"foodins":26.7,"murder":19.3,"violent":909,"commute":33.2,"pm25":8.8,"dd":5841,"hdd":4466,"cdd":1375},"src":{"health":"PLACES 2024 (BRFSS 2022), calibrated","social":"Imputed from other PLACES measures","crime":"2023-2025"}},{"n":"San Antonio, TX","st":"TX","reg":"South","pop":1526621,"col":94.3,"rpp":94.7,"metro":"San Antonio-New Braunfels, TX","z":{"mental":0.067,"physical":-0.954,"social":-0.493,"economic":-0.876,"safety":-0.241,"commute":0.043,"air":-0.29,"climate":0.419,"income":-0.492},"raw":{"inc":66176,"rent":1389,"unemp":5.7,"fmd":17.2,"fph":25.4,"lonely":37.5,"nosup":27.3,"housins":21.3,"foodins":27.2,"murder":8.7,"violent":609,"commute":25.1,"pm25":8.7,"dd":4586,"hdd":1438,"cdd":3148},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"San Diego, CA","st":"CA","reg":"West","pop":1404461,"col":112.9,"rpp":111.9,"metro":"San Diego-Chula Vista-Carlsbad, CA","z":{"mental":0.57,"physical":0.734,"social":-0.472,"economic":0.697,"safety":0.762,"commute":0.258,"air":-0.274,"climate":2.028,"income":1.071},"raw":{"inc":111032,"rent":2414,"unemp":5.8,"fmd":16.3,"fph":18.0,"lonely":36.0,"nosup":28.5,"housins":13.7,"foodins":15.7,"murder":2.4,"violent":402,"commute":24.0,"pm25":8.6,"dd":2339,"hdd":1320,"cdd":1019},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Dallas, TX","st":"TX","reg":"South","pop":1326093,"col":101.7,"rpp":103.1,"metro":"Dallas-Fort Worth-Arlington, TX","z":{"mental":0.011,"physical":-0.654,"social":-0.449,"economic":-0.801,"safety":-0.572,"commute":-0.294,"air":-0.627,"climate":0.039,"income":-0.302},"raw":{"inc":74323,"rent":1599,"unemp":4.3,"fmd":17.3,"fph":24.5,"lonely":37.5,"nosup":27.1,"housins":20.5,"foodins":27.1,"murder":14.2,"violent":636,"commute":26.8,"pm25":9.2,"dd":5116,"hdd":1992,"cdd":3125},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Fort Worth, TX","st":"TX","reg":"South","pop":1014376,"col":102.1,"rpp":103.1,"metro":"Dallas-Fort Worth-Arlington, TX","z":{"mental":-0.437,"physical":-0.521,"social":-0.229,"economic":-0.365,"safety":0.069,"commute":-0.546,"air":-0.806,"climate":0.13,"income":0.165},"raw":{"inc":82503,"rent":1630,"unemp":4.5,"fmd":18.1,"fph":23.6,"lonely":36.0,"nosup":27.2,"housins":18.7,"foodins":23.8,"murder":7.8,"violent":442,"commute":28.0,"pm25":9.5,"dd":4989,"hdd":2026,"cdd":2963},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Jacksonville, FL","st":"FL","reg":"South","pop":1009831,"col":98.8,"rpp":99.5,"metro":"Jacksonville, FL","z":{"mental":-1.053,"physical":-0.049,"social":-0.001,"economic":-0.157,"safety":-0.216,"commute":-0.054,"air":0.397,"climate":0.662,"income":-0.292},"raw":{"inc":72389,"rent":1568,"unemp":5.0,"fmd":19.2,"fph":21.0,"lonely":36.4,"nosup":25.7,"housins":17.4,"foodins":22.2,"murder":8.8,"violent":582,"commute":25.6,"pm25":7.5,"dd":4246,"hdd":944,"cdd":3303},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"San Jose, CA","st":"CA","reg":"West","pop":997395,"col":108.4,"rpp":110.4,"metro":"San Jose-Sunnyvale-Santa Clara, CA","z":{"mental":1.298,"physical":0.688,"social":-1.384,"economic":0.913,"safety":0.479,"commute":-0.68,"air":0.236,"climate":1.693,"income":2.594},"raw":{"inc":148226,"rent":2674,"unemp":5.5,"fmd":15.0,"fph":18.4,"lonely":39.8,"nosup":30.0,"housins":12.6,"foodins":15.2,"murder":2.7,"violent":542,"commute":28.7,"pm25":7.8,"dd":2808,"hdd":2184,"cdd":624},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Austin, TX","st":"TX","reg":"South","pop":993771,"col":97.9,"rpp":98.1,"metro":"Austin-Round Rock-San Marcos, TX","z":{"mental":0.85,"physical":0.981,"social":0.64,"economic":0.804,"safety":0.169,"commute":0.236,"air":-0.456,"climate":0.314,"income":0.781},"raw":{"inc":90430,"rent":1770,"unemp":4.3,"fmd":15.8,"fph":16.9,"lonely":35.3,"nosup":23.2,"housins":12.3,"foodins":15.6,"murder":6.1,"violent":465,"commute":24.2,"pm25":8.9,"dd":4732,"hdd":1442,"cdd":3290},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Charlotte, NC","st":"NC","reg":"South","pop":943474,"col":98.7,"rpp":97.3,"metro":"Charlotte-Concord-Gastonia, NC-SC","z":{"mental":0.794,"physical":0.882,"social":0.868,"economic":0.491,"safety":-0.38,"commute":-0.001,"air":-0.163,"climate":0.246,"income":0.535},"raw":{"inc":86416,"rent":1720,"unemp":4.3,"fmd":15.9,"fph":17.3,"lonely":32.8,"nosup":24.2,"housins":14.2,"foodins":17.2,"murder":9.7,"violent":671,"commute":25.3,"pm25":8.4,"dd":4827,"hdd":3058,"cdd":1769},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Columbus, OH","st":"OH","reg":"Midwest","pop":931551,"col":95.7,"rpp":95.5,"metro":"Columbus, OH","z":{"mental":-0.885,"physical":-0.034,"social":-0.101,"economic":0.077,"safety":-0.073,"commute":0.635,"air":-0.59,"climate":-0.81,"income":-0.497},"raw":{"inc":67084,"rent":1383,"unemp":4.7,"fmd":18.9,"fph":21.0,"lonely":39.0,"nosup":23.9,"housins":15.3,"foodins":19.7,"murder":10.7,"violent":416,"commute":22.2,"pm25":9.2,"dd":6301,"hdd":5233,"cdd":1068},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Indianapolis, IN","st":"IN","reg":"Midwest","pop":890315,"col":95.0,"rpp":95.7,"metro":"Indianapolis-Carmel-Greenwood, IN","z":{"mental":-0.437,"physical":-0.152,"social":0.216,"economic":0.096,"safety":-0.987,"commute":0.152,"air":-1.091,"climate":-0.873,"income":-0.476},"raw":{"inc":66900,"rent":1219,"unemp":4.4,"fmd":18.1,"fph":21.7,"lonely":35.6,"nosup":25.2,"housins":15.4,"foodins":20.2,"murder":18.1,"violent":894,"commute":24.6,"pm25":10.0,"dd":6389,"hdd":5250,"cdd":1139},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"San Francisco, CA","st":"CA","reg":"West","pop":827526,"col":115.8,"rpp":115.6,"metro":"San Francisco-Oakland-Fremont, CA","z":{"mental":1.521,"physical":1.03,"social":-0.756,"economic":1.175,"safety":0.114,"commute":-1.391,"air":0.525,"climate":1.625,"income":2.02},"raw":{"inc":139801,"rent":2448,"unemp":5.8,"fmd":14.6,"fph":16.8,"lonely":38.4,"nosup":27.9,"housins":10.3,"foodins":13.4,"murder":4.8,"violent":596,"commute":32.2,"pm25":7.3,"dd":2902,"hdd":2781,"cdd":121},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Seattle, WA","st":"WA","reg":"West","pop":780992,"col":110.6,"rpp":111.1,"metro":"Seattle-Tacoma-Bellevue, WA","z":{"mental":1.465,"physical":2.083,"social":0.069,"economic":1.663,"safety":-0.255,"commute":-0.128,"air":1.489,"climate":0.342,"income":1.478},"raw":{"inc":118745,"rent":2007,"unemp":5.2,"fmd":14.7,"fph":11.7,"lonely":36.9,"nosup":24.8,"housins":8.0,"foodins":9.1,"murder":6.7,"violent":755,"commute":25.9,"pm25":5.7,"dd":4693,"hdd":4482,"cdd":211},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Denver, CO","st":"CO","reg":"West","pop":729019,"col":104.8,"rpp":105.8,"metro":"Denver-Aurora-Centennial, CO","z":{"mental":1.409,"physical":1.221,"social":1.708,"economic":1.217,"safety":-0.632,"commute":0.082,"air":0.83,"climate":-1.008,"income":0.57},"raw":{"inc":92504,"rent":1870,"unemp":4.3,"fmd":14.8,"fph":15.4,"lonely":32.0,"nosup":20.5,"housins":11.0,"foodins":12.9,"murder":9.2,"violent":966,"commute":24.9,"pm25":6.8,"dd":6578,"hdd":5765,"cdd":813},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"Imputed from other PLACES measures","crime":"2023-2025"}},{"n":"Oklahoma City, OK","st":"OK","reg":"South","pop":713014,"col":90.6,"rpp":90.4,"metro":"Oklahoma City, OK","z":{"mental":-0.325,"physical":-0.015,"social":0.564,"economic":-0.068,"safety":-0.385,"commute":0.688,"air":-0.299,"climate":-0.223,"income":-0.041},"raw":{"inc":70040,"rent":1178,"unemp":4.1,"fmd":17.9,"fph":21.1,"lonely":32.7,"nosup":25.9,"housins":17.1,"foodins":21.1,"murder":9.8,"violent":668,"commute":21.9,"pm25":8.7,"dd":5482,"hdd":3615,"cdd":1867},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Nashville, TN","st":"TN","reg":"South","pop":704965,"col":96.8,"rpp":96.3,"metro":"Nashville-Davidson--Murfreesboro--Franklin, TN","z":{"mental":-0.885,"physical":-0.087,"social":-0.243,"economic":0.391,"safety":-0.898,"commute":0.018,"air":-0.094,"climate":-0.048,"income":0.272},"raw":{"inc":80090,"rent":1669,"unemp":3.2,"fmd":18.9,"fph":21.6,"lonely":37.5,"nosup":26.0,"housins":15.1,"foodins":19.4,"murder":12.3,"violent":1087,"commute":25.2,"pm25":8.3,"dd":5237,"hdd":3364,"cdd":1873},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Washington, DC","st":"DC","reg":"South","pop":702250,"col":107.5,"rpp":108.9,"metro":"Washington-Arlington-Alexandria, DC-VA-MD-WV","z":{"mental":1.913,"physical":1.506,"social":0.534,"economic":0.536,"safety":-1.25,"commute":-1.159,"air":0.597,"climate":-0.241,"income":1.241},"raw":{"inc":109707,"rent":1931,"unemp":5.6,"fmd":13.9,"fph":14.5,"lonely":36.3,"nosup":22.9,"housins":13.4,"foodins":16.0,"murder":27.0,"violent":910,"commute":31.0,"pm25":7.2,"dd":5507,"hdd":3769,"cdd":1738},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"El Paso, TX","st":"TX","reg":"South","pop":681724,"col":89.7,"rpp":89.9,"metro":"El Paso, TX","z":{"mental":-0.101,"physical":-1.266,"social":-0.239,"economic":-0.978,"safety":0.716,"commute":0.363,"air":-1.034,"climate":0.217,"income":-0.719},"raw":{"inc":59932,"rent":1066,"unemp":4.3,"fmd":17.5,"fph":27.0,"lonely":36.2,"nosup":27.1,"housins":22.3,"foodins":29.1,"murder":3.9,"violent":315,"commute":23.5,"pm25":9.9,"dd":4868,"hdd":2206,"cdd":2662},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Las Vegas, NV","st":"NV","reg":"West","pop":678924,"col":99.6,"rpp":100.2,"metro":"Las Vegas-Henderson-North Las Vegas, NV","z":{"mental":-1.556,"physical":-0.555,"social":-0.768,"economic":-0.58,"safety":0.17,"commute":-0.269,"air":1.217,"climate":-0.164,"income":0.049},"raw":{"inc":78556,"rent":1688,"unemp":6.6,"fmd":20.1,"fph":23.3,"lonely":37.9,"nosup":28.4,"housins":19.3,"foodins":22.0,"murder":6.6,"violent":438,"commute":26.6,"pm25":6.1,"dd":5399,"hdd":1992,"cdd":3407},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Boston, MA","st":"MA","reg":"Northeast","pop":673822,"col":109.5,"rpp":108.3,"metro":"Boston-Cambridge-Newton, MA-NH","z":{"mental":0.234,"physical":0.597,"social":0.008,"economic":-0.01,"safety":0.162,"commute":-1.293,"air":1.067,"climate":-0.843,"income":0.624},"raw":{"inc":97791,"rent":2196,"unemp":4.8,"fmd":16.9,"fph":18.4,"lonely":37.2,"nosup":24.9,"housins":16.4,"foodins":18.7,"murder":4.2,"violent":613,"commute":31.7,"pm25":6.4,"dd":6347,"hdd":5545,"cdd":802},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Detroit, MI","st":"MI","reg":"Midwest","pop":645702,"col":98.2,"rpp":100.3,"metro":"Detroit-Warren-Dearborn, MI","z":{"mental":-3.067,"physical":-2.585,"social":-1.505,"economic":-3.692,"safety":-1.906,"commute":0.498,"air":-0.96,"climate":-1.282,"income":-3.102},"raw":{"inc":39209,"rent":1091,"unemp":10.5,"fmd":22.8,"fph":32.9,"lonely":37.0,"nosup":33.1,"housins":32.0,"foodins":41.4,"murder":32.4,"violent":1826,"commute":22.9,"pm25":9.8,"dd":6960,"hdd":6106,"cdd":854},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Louisville, KY","st":"KY","reg":"South","pop":640793,"col":93.1,"rpp":93.1,"metro":"Louisville/Jefferson County, KY-IN","z":{"mental":0.228,"physical":-0.078,"social":1.291,"economic":0.284,"safety":-0.741,"commute":0.326,"air":-0.255,"climate":-0.375,"income":-0.357},"raw":{"inc":67251,"rent":1144,"unemp":6.7,"fmd":16.9,"fph":21.5,"lonely":33.4,"nosup":21.5,"housins":13.8,"foodins":18.3,"murder":15.7,"violent":733,"commute":23.7,"pm25":8.6,"dd":5694,"hdd":4151,"cdd":1543},"src":{"health":"PLACES 2024 (BRFSS 2022), calibrated","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Portland, OR","st":"OR","reg":"West","pop":636958,"col":104.0,"rpp":105.4,"metro":"Portland-Vancouver-Hillsboro, OR-WA","z":{"mental":-0.493,"physical":0.916,"social":0.917,"economic":1.287,"safety":-0.463,"commute":0.181,"air":1.521,"climate":0.401,"income":0.556},"raw":{"inc":91478,"rent":1648,"unemp":5.0,"fmd":18.2,"fph":16.8,"lonely":35.3,"nosup":21.8,"housins":9.4,"foodins":11.6,"murder":10.2,"violent":716,"commute":24.4,"pm25":5.6,"dd":4611,"hdd":4104,"cdd":508},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"Imputed from other PLACES measures","crime":"2023-2025"}},{"n":"Memphis, TN","st":"TN","reg":"South","pop":610936,"col":91.5,"rpp":92.2,"metro":"Memphis, TN-MS-AR","z":{"mental":-1.948,"physical":-1.365,"social":-1.339,"economic":-1.986,"safety":-2.276,"commute":0.801,"air":-0.219,"climate":-0.013,"income":-1.405},"raw":{"inc":52679,"rent":1263,"unemp":7.9,"fmd":20.8,"fph":27.4,"lonely":38.5,"nosup":30.9,"housins":25.4,"foodins":33.1,"murder":43.0,"violent":2326,"commute":21.4,"pm25":8.5,"dd":5189,"hdd":2875,"cdd":2314},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Baltimore, MD","st":"MD","reg":"South","pop":568271,"col":100.9,"rpp":104.5,"metro":"Baltimore-Columbia-Towson, MD","z":{"mental":-0.717,"physical":-0.528,"social":-1.254,"economic":-1.3,"safety":-1.776,"commute":-0.985,"air":0.168,"climate":-0.313,"income":-0.902},"raw":{"inc":64778,"rent":1345,"unemp":6.8,"fmd":18.6,"fph":23.6,"lonely":40.5,"nosup":28.7,"housins":22.9,"foodins":27.0,"murder":33.2,"violent":1514,"commute":30.2,"pm25":7.9,"dd":5607,"hdd":3858,"cdd":1749},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Milwaukee, WI","st":"WI","reg":"Midwest","pop":563512,"col":95.6,"rpp":96.9,"metro":"Milwaukee-Waukesha, WI","z":{"mental":-0.717,"physical":-1.422,"social":-0.437,"economic":-1.132,"safety":-1.552,"commute":0.572,"air":-0.363,"climate":-1.475,"income":-1.26},"raw":{"inc":56792,"rent":1081,"unemp":6.4,"fmd":18.6,"fph":27.7,"lonely":36.7,"nosup":27.7,"housins":21.4,"foodins":28.8,"murder":26.9,"violent":1345,"commute":22.5,"pm25":8.8,"dd":7230,"hdd":6450,"cdd":780},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Albuquerque, NM","st":"NM","reg":"West","pop":560333,"col":95.6,"rpp":95.5,"metro":"Albuquerque, NM","z":{"mental":0.346,"physical":-0.102,"social":0.556,"economic":0.011,"safety":-1.171,"commute":0.461,"air":1.167,"climate":-0.188,"income":-0.197},"raw":{"inc":71494,"rent":1227,"unemp":4.7,"fmd":16.7,"fph":21.4,"lonely":34.8,"nosup":24.1,"housins":16.9,"foodins":20.0,"murder":17.3,"violent":1178,"commute":23.1,"pm25":6.2,"dd":5433,"hdd":3996,"cdd":1438},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Tucson, AZ","st":"AZ","reg":"West","pop":554011,"col":96.1,"rpp":96.9,"metro":"Tucson, AZ","z":{"mental":-0.661,"physical":-0.448,"social":0.061,"economic":-0.071,"safety":-0.177,"commute":0.736,"air":1.165,"climate":0.297,"income":-0.994},"raw":{"inc":60483,"rent":1235,"unemp":5.1,"fmd":18.5,"fph":22.9,"lonely":33.8,"nosup":27.6,"housins":16.0,"foodins":20.9,"murder":8.8,"violent":557,"commute":21.7,"pm25":6.2,"dd":4756,"hdd":1332,"cdd":3424},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Fresno, CA","st":"CA","reg":"West","pop":550091,"col":102.6,"rpp":102.2,"metro":"Fresno, CA","z":{"mental":-0.829,"physical":-1.585,"social":-0.871,"economic":-1.133,"safety":-0.133,"commute":0.44,"air":-1.753,"climate":0.555,"income":-0.332},"raw":{"inc":74491,"rent":1552,"unemp":9.2,"fmd":18.8,"fph":28.6,"lonely":37.5,"nosup":29.3,"housins":21.3,"foodins":27.6,"murder":5.7,"violent":729,"commute":23.2,"pm25":11.1,"dd":4396,"hdd":2186,"cdd":2209},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Sacramento, CA","st":"CA","reg":"West","pop":535787,"col":106.0,"rpp":106.7,"metro":"Sacramento-Roseville-Folsom, CA","z":{"mental":-0.325,"physical":-0.357,"social":-1.292,"economic":0.03,"safety":-0.365,"commute":0.013,"air":0.625,"climate":1.043,"income":0.463},"raw":{"inc":91387,"rent":1846,"unemp":6.2,"fmd":17.9,"fph":22.9,"lonely":39.7,"nosup":29.6,"housins":16.5,"foodins":19.3,"murder":8.0,"violent":759,"commute":25.3,"pm25":7.1,"dd":3715,"hdd":2138,"cdd":1576},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Atlanta, GA","st":"GA","reg":"South","pop":520066,"col":100.0,"rpp":100.1,"metro":"Atlanta-Sandy Springs-Roswell, GA","z":{"mental":0.626,"physical":0.487,"social":0.246,"economic":0.014,"safety":-0.926,"commute":-0.241,"air":-0.619,"climate":0.408,"income":0.566},"raw":{"inc":88165,"rent":1765,"unemp":5.1,"fmd":16.2,"fph":19.1,"lonely":36.9,"nosup":23.9,"housins":16.1,"foodins":19.1,"murder":23.0,"violent":682,"commute":26.5,"pm25":9.2,"dd":4601,"hdd":2775,"cdd":1825},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Mesa, AZ","st":"AZ","reg":"West","pop":517142,"col":102.0,"rpp":103.3,"metro":"Phoenix-Mesa-Chandler, AZ","z":{"mental":0.626,"physical":0.677,"social":0.62,"economic":0.839,"safety":0.458,"commute":-0.209,"air":1.096,"climate":-0.336,"income":0.335},"raw":{"inc":85580,"rent":1708,"unemp":3.4,"fmd":16.2,"fph":18.1,"lonely":32.7,"nosup":25.6,"housins":12.8,"foodins":16.6,"murder":3.8,"violent":448,"commute":26.3,"pm25":6.3,"dd":5639,"hdd":874,"cdd":4765},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Kansas City, MO","st":"MO","reg":"Midwest","pop":516045,"col":92.3,"rpp":92.5,"metro":"Kansas City, MO-KS","z":{"mental":-0.773,"physical":-0.099,"social":1.035,"economic":-0.002,"safety":-1.681,"commute":0.724,"air":0.437,"climate":-0.824,"income":-0.133},"raw":{"inc":69958,"rent":1292,"unemp":2.7,"fmd":18.7,"fph":21.5,"lonely":33.5,"nosup":22.7,"housins":17.2,"foodins":18.9,"murder":29.6,"violent":1469,"commute":21.8,"pm25":7.4,"dd":6321,"hdd":4613,"cdd":1708},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Raleigh, NC","st":"NC","reg":"South","pop":499637,"col":98.0,"rpp":98.2,"metro":"Raleigh-Cary, NC","z":{"mental":0.738,"physical":1.243,"social":1.464,"economic":1.004,"safety":0.268,"commute":0.465,"air":0.108,"climate":0.152,"income":0.493},"raw":{"inc":85060,"rent":1661,"unemp":3.6,"fmd":16.0,"fph":15.8,"lonely":32.5,"nosup":21.3,"housins":11.8,"foodins":14.1,"murder":5.1,"violent":470,"commute":23.0,"pm25":8.0,"dd":4958,"hdd":3153,"cdd":1804},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Colorado Springs, CO","st":"CO","reg":"West","pop":493540,"col":100.0,"rpp":100.7,"metro":"Colorado Springs, CO","z":{"mental":-0.493,"physical":0.879,"social":1.028,"economic":1.174,"safety":-0.092,"commute":0.405,"air":1.73,"climate":-0.95,"income":0.324},"raw":{"inc":83672,"rent":1699,"unemp":5.3,"fmd":18.2,"fph":16.6,"lonely":33.8,"nosup":22.4,"housins":10.7,"foodins":12.1,"murder":5.6,"violent":701,"commute":23.3,"pm25":5.3,"dd":6496,"hdd":5888,"cdd":608},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"Imputed from other PLACES measures","crime":"2023-2025"}},{"n":"Omaha, NE","st":"NE","reg":"Midwest","pop":489263,"col":91.9,"rpp":91.9,"metro":"Omaha, NE-IA","z":{"mental":1.13,"physical":0.871,"social":1.774,"economic":0.657,"safety":0.339,"commute":1.091,"air":0.314,"climate":-1.35,"income":-0.004},"raw":{"inc":71640,"rent":1229,"unemp":4.7,"fmd":15.3,"fph":17.2,"lonely":29.6,"nosup":22.2,"housins":13.0,"foodins":16.7,"murder":5.2,"violent":423,"commute":20.0,"pm25":7.6,"dd":7055,"hdd":6001,"cdd":1054},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2022-2025"}},{"n":"Miami, FL","st":"FL","reg":"South","pop":487006,"col":112.8,"rpp":114.2,"metro":"Miami-Fort Lauderdale-West Palm Beach, FL","z":{"mental":1.018,"physical":-0.684,"social":0.78,"economic":-0.746,"safety":0.207,"commute":-0.442,"air":0.37,"climate":0.605,"income":-1.306},"raw":{"inc":66337,"rent":1975,"unemp":4.2,"fmd":15.5,"fph":24.1,"lonely":32.0,"nosup":25.4,"housins":20.7,"foodins":29.1,"murder":6.2,"violent":442,"commute":27.5,"pm25":7.5,"dd":4325,"hdd":138,"cdd":4187},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Virginia Beach, VA","st":"VA","reg":"South","pop":454808,"col":100.1,"rpp":97.9,"metro":"Virginia Beach-Chesapeake-Norfolk, VA-NC","z":{"mental":0.122,"physical":0.886,"social":0.741,"economic":1.153,"safety":1.701,"commute":0.103,"air":0.449,"climate":0.144,"income":0.885},"raw":{"inc":94579,"rent":1753,"unemp":3.1,"fmd":17.1,"fph":17.0,"lonely":36.3,"nosup":21.8,"housins":11.7,"foodins":13.2,"murder":3.4,"violent":96,"commute":24.8,"pm25":7.4,"dd":4969,"hdd":3424,"cdd":1546},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Long Beach, CA","st":"CA","reg":"West","pop":450917,"col":111.5,"rpp":113.6,"metro":"Los Angeles-Long Beach-Anaheim, CA","z":{"mental":-0.045,"physical":-0.657,"social":-1.969,"economic":-0.218,"safety":-0.157,"commute":-1.202,"air":-1.717,"climate":2.029,"income":0.227},"raw":{"inc":91318,"rent":1962,"unemp":5.3,"fmd":17.4,"fph":24.2,"lonely":41.4,"nosup":31.7,"housins":19.1,"foodins":22.8,"murder":7.0,"violent":646,"commute":31.2,"pm25":11.1,"dd":2339,"hdd":1173,"cdd":1166},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Oakland, CA","st":"CA","reg":"West","pop":443575,"col":109.7,"rpp":115.6,"metro":"San Francisco-Oakland-Fremont, CA","z":{"mental":-0.157,"physical":-0.11,"social":-1.037,"economic":-0.041,"safety":-1.774,"commute":-1.205,"air":0.319,"climate":1.651,"income":0.821},"raw":{"inc":102235,"rent":2008,"unemp":6.2,"fmd":17.6,"fph":21.8,"lonely":39.3,"nosup":28.6,"housins":16.8,"foodins":20.1,"murder":19.5,"violent":2332,"commute":31.2,"pm25":7.6,"dd":2866,"hdd":2690,"cdd":175},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Minneapolis, MN","st":"MN","reg":"Midwest","pop":428572,"col":103.4,"rpp":104.8,"metro":"Minneapolis-St. Paul-Bloomington, MN-WI","z":{"mental":0.794,"physical":0.92,"social":0.933,"economic":0.448,"safety":-1.092,"commute":0.51,"air":-0.525,"climate":-2.191,"income":-0.173},"raw":{"inc":77732,"rent":1340,"unemp":5.5,"fmd":15.9,"fph":17.3,"lonely":34.0,"nosup":22.8,"housins":13.4,"foodins":16.6,"murder":16.6,"violent":1101,"commute":22.8,"pm25":9.1,"dd":8229,"hdd":7399,"cdd":830},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Bakersfield, CA","st":"CA","reg":"West","pop":417461,"col":103.3,"rpp":100.9,"metro":"Bakersfield-Delano, CA","z":{"mental":-1.165,"physical":-1.083,"social":-0.687,"economic":-0.728,"safety":-0.175,"commute":0.498,"air":-2.925,"climate":0.565,"income":0.086},"raw":{"inc":82093,"rent":1708,"unemp":6.2,"fmd":19.4,"fph":26.0,"lonely":36.5,"nosup":29.2,"housins":20.7,"foodins":25.0,"murder":7.2,"violent":644,"commute":22.9,"pm25":13.1,"dd":4382,"hdd":1958,"cdd":2425},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Tampa, FL","st":"FL","reg":"South","pop":414575,"col":102.4,"rpp":100.9,"metro":"Tampa-St. Petersburg-Clearwater, FL","z":{"mental":0.067,"physical":0.133,"social":0.98,"economic":-0.038,"safety":0.153,"commute":-0.152,"air":0.297,"climate":0.579,"income":0.239},"raw":{"inc":84114,"rent":1898,"unemp":4.8,"fmd":17.2,"fph":20.4,"lonely":32.5,"nosup":23.9,"housins":16.7,"foodins":22.0,"murder":7.5,"violent":411,"commute":26.1,"pm25":7.7,"dd":4362,"hdd":434,"cdd":3928},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Tulsa, OK","st":"OK","reg":"South","pop":413652,"col":89.0,"rpp":89.2,"metro":"Tulsa, OK","z":{"mental":-0.997,"physical":-0.49,"social":-0.355,"economic":-0.587,"safety":-0.5,"commute":1.137,"air":-0.086,"climate":-0.293,"income":-0.607},"raw":{"inc":60930,"rent":1099,"unemp":5.4,"fmd":19.1,"fph":23.2,"lonely":36.2,"nosup":27.7,"housins":18.8,"foodins":24.1,"murder":8.1,"violent":898,"commute":19.7,"pm25":8.3,"dd":5579,"hdd":3451,"cdd":2128},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Arlington, TX","st":"TX","reg":"South","pop":403657,"col":101.6,"rpp":103.1,"metro":"Dallas-Fort Worth-Arlington, TX","z":{"mental":-0.381,"physical":-0.274,"social":-0.245,"economic":-0.382,"safety":0.421,"commute":-0.39,"air":-0.806,"climate":0.158,"income":-0.295},"raw":{"inc":74388,"rent":1594,"unemp":5.7,"fmd":18.0,"fph":22.5,"lonely":35.9,"nosup":27.4,"housins":18.3,"foodins":22.7,"murder":3.9,"violent":461,"commute":27.2,"pm25":9.5,"dd":4950,"hdd":2126,"cdd":2824},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Aurora, CO","st":"CO","reg":"West","pop":402452,"col":105.6,"rpp":105.8,"metro":"Denver-Aurora-Centennial, CO","z":{"mental":-0.045,"physical":0.411,"social":0.55,"economic":0.431,"safety":-0.59,"commute":-0.765,"air":0.678,"climate":-1.008,"income":0.6},"raw":{"inc":93837,"rent":1932,"unemp":5.8,"fmd":17.4,"fph":19.1,"lonely":34.5,"nosup":24.4,"housins":14.1,"foodins":16.9,"murder":9.6,"violent":888,"commute":29.1,"pm25":7.0,"dd":6578,"hdd":5765,"cdd":813},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"Imputed from other PLACES measures","crime":"2023-2025"}},{"n":"Wichita, KS","st":"KS","reg":"Midwest","pop":400993,"col":88.7,"rpp":88.9,"metro":"Wichita, KS","z":{"mental":-0.381,"physical":-0.049,"social":0.325,"economic":0.022,"safety":-0.787,"commute":1.628,"air":-0.664,"climate":-0.728,"income":-0.23},"raw":{"inc":65855,"rent":989,"unemp":5.7,"fmd":18.0,"fph":21.4,"lonely":34.6,"nosup":25.5,"housins":16.2,"foodins":19.3,"murder":9.1,"violent":1193,"commute":17.3,"pm25":9.3,"dd":6187,"hdd":4414,"cdd":1774},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Cleveland, OH","st":"OH","reg":"Midwest","pop":365391,"col":92.3,"rpp":93.9,"metro":"Cleveland, OH","z":{"mental":-1.444,"physical":-1.779,"social":-1.142,"economic":-2.053,"safety":-1.782,"commute":0.739,"air":-0.58,"climate":-0.907,"income":-2.347},"raw":{"inc":43383,"rent":961,"unemp":7.2,"fmd":19.9,"fph":29.1,"lonely":41.3,"nosup":27.4,"housins":24.7,"foodins":32.7,"murder":32.5,"violent":1549,"commute":21.7,"pm25":9.1,"dd":6437,"hdd":5513,"cdd":925},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"New Orleans, LA","st":"LA","reg":"South","pop":362701,"col":93.2,"rpp":92.6,"metro":"New Orleans-Metairie, LA","z":{"mental":-1.165,"physical":-0.334,"social":-1.662,"economic":-1.064,"safety":-2.145,"commute":0.627,"air":0.109,"climate":0.533,"income":-0.979},"raw":{"inc":58821,"rent":1310,"unemp":6.0,"fmd":19.4,"fph":22.7,"lonely":40.0,"nosup":31.3,"housins":20.8,"foodins":26.6,"murder":62.5,"violent":1439,"commute":22.2,"pm25":8.0,"dd":4426,"hdd":1134,"cdd":3292},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2022-2023"}},{"n":"Henderson, NV","st":"NV","reg":"West","pop":350020,"col":101.6,"rpp":100.2,"metro":"Las Vegas-Henderson-North Las Vegas, NV","z":{"mental":-0.885,"physical":0.787,"social":0.022,"economic":0.689,"safety":1.081,"commute":0.262,"air":1.376,"climate":-0.276,"income":0.857},"raw":{"inc":95415,"rent":1863,"unemp":6.4,"fmd":18.9,"fph":17.2,"lonely":36.2,"nosup":25.7,"housins":13.0,"foodins":13.6,"murder":2.5,"violent":263,"commute":24.0,"pm25":5.8,"dd":5556,"hdd":1836,"cdd":3720},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Honolulu, HI","st":"HI","reg":"West","pop":344977,"col":108.8,"rpp":111.0,"metro":"Urban Honolulu, HI","z":{"mental":1.298,"physical":0.776,"social":-0.645,"economic":1.144,"safety":1.542,"commute":0.514,"air":2.436,"climate":0.289,"income":0.07},"raw":{"inc":86169,"rent":1815,"unemp":2.9,"fmd":15.0,"fph":17.9,"lonely":33.4,"nosup":31.7,"housins":11.8,"foodins":19.4,"murder":1.5,"violent":194,"commute":22.8,"pm25":4.1,"dd":4767,"hdd":0,"cdd":4767},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Anaheim, CA","st":"CA","reg":"West","pop":344579,"col":115.6,"rpp":113.6,"metro":"Los Angeles-Long Beach-Anaheim, CA","z":{"mental":-0.325,"physical":-0.962,"social":-1.123,"economic":-0.168,"safety":0.379,"commute":-0.387,"air":-2.265,"climate":1.409,"income":0.532},"raw":{"inc":101145,"rent":2258,"unemp":5.0,"fmd":17.9,"fph":25.8,"lonely":37.2,"nosup":30.9,"housins":18.8,"foodins":23.2,"murder":2.8,"violent":602,"commute":27.2,"pm25":12.0,"dd":3204,"hdd":1387,"cdd":1817},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Orlando, FL","st":"FL","reg":"South","pop":334871,"col":101.0,"rpp":101.4,"metro":"Orlando-Kissimmee-Sanford, FL","z":{"mental":0.346,"physical":0.145,"social":0.308,"economic":-0.006,"safety":-0.588,"commute":-0.153,"air":0.957,"climate":0.855,"income":-0.072},"raw":{"inc":77597,"rent":1841,"unemp":3.5,"fmd":16.7,"fph":20.3,"lonely":35.7,"nosup":24.7,"housins":17.4,"foodins":21.6,"murder":10.3,"violent":836,"commute":26.1,"pm25":6.6,"dd":3976,"hdd":525,"cdd":3452},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2022-2022"}},{"n":"Lexington, KY","st":"KY","reg":"South","pop":329437,"col":93.3,"rpp":92.9,"metro":"Lexington-Fayette, KY","z":{"mental":0.276,"physical":0.15,"social":1.483,"economic":0.621,"safety":0.74,"commute":0.814,"air":0.68,"climate":-0.395,"income":-0.18},"raw":{"inc":69989,"rent":1281,"unemp":4.4,"fmd":16.8,"fph":20.4,"lonely":32.6,"nosup":21.1,"housins":12.8,"foodins":17.7,"murder":5.2,"violent":250,"commute":21.3,"pm25":7.0,"dd":5721,"hdd":4432,"cdd":1289},"src":{"health":"PLACES 2024 (BRFSS 2022), calibrated","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Stockton, CA","st":"CA","reg":"West","pop":324980,"col":103.4,"rpp":105.1,"metro":"Stockton-Lodi, CA","z":{"mental":-0.437,"physical":-1.334,"social":-1.234,"economic":-1.075,"safety":-1.002,"commute":-1.167,"air":-0.431,"climate":0.963,"income":-0.118},"raw":{"inc":78627,"rent":1635,"unemp":10.6,"fmd":18.1,"fph":27.4,"lonely":37.3,"nosup":31.4,"housins":20.9,"foodins":26.6,"murder":14.2,"violent":1111,"commute":31.1,"pm25":8.9,"dd":3826,"hdd":2260,"cdd":1566},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Riverside, CA","st":"CA","reg":"West","pop":323792,"col":107.0,"rpp":106.4,"metro":"Riverside-San Bernardino-Ontario, CA","z":{"mental":-0.437,"physical":-0.828,"social":-0.687,"economic":-0.405,"safety":0.363,"commute":-1.264,"air":-2.565,"climate":1.383,"income":0.346},"raw":{"inc":90004,"rent":2060,"unemp":6.4,"fmd":18.1,"fph":24.9,"lonely":37.3,"nosup":28.5,"housins":19.8,"foodins":22.8,"murder":3.3,"violent":557,"commute":31.5,"pm25":12.5,"dd":3240,"hdd":1386,"cdd":1854},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Irvine, CA","st":"CA","reg":"West","pop":318693,"col":127.1,"rpp":113.6,"metro":"Los Angeles-Long Beach-Anaheim, CA","z":{"mental":1.465,"physical":1.414,"social":0.125,"economic":1.534,"safety":2.43,"commute":-0.084,"air":-1.325,"climate":2.152,"income":1.781},"raw":{"inc":145731,"rent":3091,"unemp":5.3,"fmd":14.7,"fph":15.1,"lonely":34.1,"nosup":27.0,"housins":8.9,"foodins":11.0,"murder":0.7,"violent":84,"commute":25.7,"pm25":10.4,"dd":2167,"hdd":1092,"cdd":1075},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Corpus Christi, TX","st":"TX","reg":"South","pop":317314,"col":92.4,"rpp":92.7,"metro":"Corpus Christi, TX","z":{"mental":0.067,"physical":-1.118,"social":-0.682,"economic":-0.626,"safety":-0.291,"commute":0.828,"air":-0.701,"climate":0.25,"income":-0.341},"raw":{"inc":66967,"rent":1269,"unemp":4.7,"fmd":17.2,"fph":26.5,"lonely":37.6,"nosup":28.2,"housins":20.6,"foodins":26.1,"murder":6.1,"violent":844,"commute":21.2,"pm25":9.3,"dd":4822,"hdd":583,"cdd":4239},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Newark, NJ","st":"NJ","reg":"Northeast","pop":317303,"col":107.4,"rpp":112.6,"metro":"New York-Newark-Jersey City, NY-NJ","z":{"mental":-1.165,"physical":-1.874,"social":-1.675,"economic":-2.996,"safety":-0.409,"commute":-1.506,"air":0.122,"climate":-0.573,"income":-1.662},"raw":{"inc":58490,"rent":1475,"unemp":11.8,"fmd":19.4,"fph":29.6,"lonely":38.6,"nosup":32.6,"housins":29.9,"foodins":37.0,"murder":13.7,"violent":530,"commute":32.7,"pm25":8.0,"dd":5970,"hdd":4701,"cdd":1270},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Santa Ana, CA","st":"CA","reg":"West","pop":316188,"col":114.5,"rpp":113.6,"metro":"Los Angeles-Long Beach-Anaheim, CA","z":{"mental":-0.493,"physical":-1.969,"social":-1.718,"economic":-0.739,"safety":0.473,"commute":0.024,"air":-1.325,"climate":2.152,"income":0.289},"raw":{"inc":95118,"rent":2184,"unemp":3.4,"fmd":18.2,"fph":30.5,"lonely":38.4,"nosup":33.0,"housins":23.0,"foodins":28.7,"murder":3.5,"violent":462,"commute":25.2,"pm25":10.4,"dd":2167,"hdd":1092,"cdd":1075},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Cincinnati, OH","st":"OH","reg":"Midwest","pop":314914,"col":94.3,"rpp":95.4,"metro":"Cincinnati, OH-KY-IN","z":{"mental":-0.997,"physical":-0.3,"social":0.667,"economic":-0.592,"safety":-1.001,"commute":0.795,"air":-0.183,"climate":-0.543,"income":-1.186},"raw":{"inc":56910,"rent":1115,"unemp":5.7,"fmd":19.1,"fph":22.6,"lonely":34.7,"nosup":23.6,"housins":18.3,"foodins":22.7,"murder":21.7,"violent":789,"commute":21.4,"pm25":8.5,"dd":5929,"hdd":4804,"cdd":1125},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Pittsburgh, PA","st":"PA","reg":"Northeast","pop":307670,"col":97.2,"rpp":94.7,"metro":"Pittsburgh, PA","z":{"mental":0.372,"physical":0.11,"social":0.534,"economic":0.45,"safety":-0.2,"commute":0.196,"air":-0.311,"climate":-0.761,"income":-0.576},"raw":{"inc":66954,"rent":1304,"unemp":5.3,"fmd":16.7,"fph":20.5,"lonely":34.3,"nosup":24.7,"housins":14.1,"foodins":17.9,"murder":12.2,"violent":445,"commute":24.4,"pm25":8.7,"dd":6233,"hdd":5406,"cdd":826},"src":{"health":"PLACES 2024 (BRFSS 2022), calibrated","social":"Imputed from other PLACES measures","crime":"2023-2025"}},{"n":"St. Paul, MN","st":"MN","reg":"Midwest","pop":307484,"col":102.2,"rpp":104.8,"metro":"Minneapolis-St. Paul-Bloomington, MN-WI","z":{"mental":0.234,"physical":0.221,"social":-0.513,"economic":0.367,"safety":-0.11,"commute":0.956,"air":-0.525,"climate":-2.146,"income":-0.59},"raw":{"inc":70182,"rent":1247,"unemp":4.7,"fmd":16.9,"fph":20.3,"lonely":38.3,"nosup":26.7,"housins":13.9,"foodins":19.3,"murder":7.5,"violent":577,"commute":20.6,"pm25":9.1,"dd":8167,"hdd":7443,"cdd":724},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Greensboro, NC","st":"NC","reg":"South","pop":307372,"col":94.4,"rpp":92.9,"metro":"Greensboro-High Point, NC","z":{"mental":-0.269,"physical":0.217,"social":0.415,"economic":-0.234,"safety":-0.782,"commute":0.702,"air":0.072,"climate":0.085,"income":-0.686},"raw":{"inc":63516,"rent":1314,"unemp":4.0,"fmd":17.8,"fph":20.2,"lonely":34.4,"nosup":25.2,"housins":17.9,"foodins":21.6,"murder":15.7,"violent":772,"commute":21.9,"pm25":8.0,"dd":5052,"hdd":3500,"cdd":1552},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Jersey City, NJ","st":"NJ","reg":"Northeast","pop":302822,"col":117.1,"rpp":112.6,"metro":"New York-Newark-Jersey City, NY-NJ","z":{"mental":1.745,"physical":0.635,"social":0.543,"economic":0.551,"safety":0.504,"commute":-2.787,"air":0.137,"climate":-0.573,"income":0.451},"raw":{"inc":100751,"rent":2182,"unemp":4.4,"fmd":14.2,"fph":18.2,"lonely":32.6,"nosup":26.1,"housins":14.2,"foodins":18.4,"murder":3.5,"violent":447,"commute":39.0,"pm25":7.9,"dd":5970,"hdd":4701,"cdd":1270},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Durham, NC","st":"NC","reg":"South","pop":301877,"col":98.3,"rpp":97.6,"metro":"Durham-Chapel Hill, NC","z":{"mental":0.906,"physical":0.787,"social":1.252,"economic":0.543,"safety":-0.437,"commute":0.812,"air":0.13,"climate":0.152,"income":0.359},"raw":{"inc":82916,"rent":1670,"unemp":3.1,"fmd":15.7,"fph":17.8,"lonely":32.3,"nosup":22.6,"housins":14.2,"foodins":17.1,"murder":12.6,"violent":587,"commute":21.3,"pm25":7.9,"dd":4958,"hdd":3153,"cdd":1804},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Lincoln, NE","st":"NE","reg":"Midwest","pop":300626,"col":91.7,"rpp":91.6,"metro":"Lincoln, NE","z":{"mental":1.354,"physical":1.224,"social":1.903,"economic":1.221,"safety":0.812,"commute":1.249,"air":0.362,"climate":-1.401,"income":0.031},"raw":{"inc":72008,"rent":1122,"unemp":3.4,"fmd":14.9,"fph":15.7,"lonely":30.3,"nosup":20.9,"housins":10.5,"foodins":13.3,"murder":2.4,"violent":385,"commute":19.2,"pm25":7.6,"dd":7127,"hdd":5856,"cdd":1270},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"North Las Vegas, NV","st":"NV","reg":"West","pop":294042,"col":102.1,"rpp":100.2,"metro":"Las Vegas-Henderson-North Las Vegas, NV","z":{"mental":-1.724,"physical":-0.935,"social":-1.523,"economic":-1.161,"safety":0.186,"commute":-0.311,"air":0.928,"climate":-0.164,"income":-0.039},"raw":{"inc":78969,"rent":1902,"unemp":8.2,"fmd":20.4,"fph":25.1,"lonely":39.5,"nosup":31.0,"housins":22.0,"foodins":24.8,"murder":9.0,"violent":341,"commute":26.8,"pm25":6.6,"dd":5399,"hdd":1992,"cdd":3407},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Plano, TX","st":"TX","reg":"South","pop":292615,"col":105.3,"rpp":103.1,"metro":"Dallas-Fort Worth-Arlington, TX","z":{"mental":1.633,"physical":1.486,"social":0.935,"economic":1.362,"safety":1.892,"commute":-0.138,"air":-0.627,"climate":0.102,"income":1.593},"raw":{"inc":115901,"rent":1904,"unemp":4.0,"fmd":14.4,"fph":14.6,"lonely":33.9,"nosup":22.9,"housins":10.1,"foodins":12.5,"murder":0.9,"violent":154,"commute":26.0,"pm25":9.2,"dd":5029,"hdd":2498,"cdd":2531},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Anchorage, AK","st":"AK","reg":"West","pop":289600,"col":106.0,"rpp":105.4,"metro":"Anchorage, AK","z":{"mental":0.57,"physical":0.685,"social":0.5,"economic":0.781,"safety":-0.647,"commute":1.478,"air":2.418,"climate":-3.404,"income":1.121},"raw":{"inc":105356,"rent":1536,"unemp":4.8,"fmd":16.3,"fph":17.9,"lonely":34.0,"nosup":25.1,"housins":12.5,"foodins":13.6,"murder":8.6,"violent":1035,"commute":18.1,"pm25":4.1,"dd":9922,"hdd":9902,"cdd":20},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Gilbert, AZ","st":"AZ","reg":"West","pop":288797,"col":107.3,"rpp":103.3,"metro":"Phoenix-Mesa-Chandler, AZ","z":{"mental":1.633,"physical":1.84,"social":1.264,"economic":1.695,"safety":1.791,"commute":-0.572,"air":0.748,"climate":-0.336,"income":1.854},"raw":{"inc":124968,"rent":2167,"unemp":3.9,"fmd":14.4,"fph":12.9,"lonely":31.2,"nosup":23.5,"housins":8.3,"foodins":9.9,"murder":1.9,"violent":124,"commute":28.1,"pm25":6.9,"dd":5639,"hdd":874,"cdd":4765},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Madison, WI","st":"WI","reg":"Midwest","pop":285318,"col":97.8,"rpp":97.3,"metro":"Madison, WI","z":{"mental":1.186,"physical":1.365,"social":2.228,"economic":1.466,"safety":1.077,"commute":0.941,"air":-0.163,"climate":-1.859,"income":0.173},"raw":{"inc":79254,"rent":1484,"unemp":2.3,"fmd":15.2,"fph":14.8,"lonely":30.5,"nosup":19.0,"housins":10.0,"foodins":12.2,"murder":2.6,"violent":258,"commute":20.7,"pm25":8.4,"dd":7766,"hdd":7138,"cdd":627},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Reno, NV","st":"NV","reg":"West","pop":281684,"col":100.7,"rpp":101.0,"metro":"Reno, NV","z":{"mental":-0.773,"physical":-0.045,"social":-0.306,"economic":0.421,"safety":-0.018,"commute":0.936,"air":1.581,"climate":-0.385,"income":0.398},"raw":{"inc":85605,"rent":1654,"unemp":4.5,"fmd":18.7,"fph":21.1,"lonely":38.3,"nosup":25.6,"housins":14.6,"foodins":17.2,"murder":6.6,"violent":558,"commute":20.7,"pm25":5.5,"dd":5707,"hdd":4669,"cdd":1038},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Chandler, AZ","st":"AZ","reg":"West","pop":281243,"col":105.4,"rpp":103.3,"metro":"Phoenix-Mesa-Chandler, AZ","z":{"mental":1.689,"physical":1.479,"social":0.92,"economic":1.442,"safety":1.75,"commute":-0.093,"air":0.322,"climate":-0.336,"income":1.359},"raw":{"inc":110284,"rent":2000,"unemp":3.2,"fmd":14.3,"fph":14.6,"lonely":31.8,"nosup":24.8,"housins":9.9,"foodins":12.5,"murder":1.5,"violent":146,"commute":25.8,"pm25":7.6,"dd":5639,"hdd":874,"cdd":4765},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"St. Louis, MO","st":"MO","reg":"Midwest","pop":279695,"col":93.8,"rpp":95.1,"metro":"St. Louis, MO-IL","z":{"mental":-0.661,"physical":-0.452,"social":0.129,"economic":-0.769,"safety":-2.001,"commute":0.351,"air":-0.279,"climate":-0.611,"income":-1.46},"raw":{"inc":53374,"rent":1044,"unemp":5.0,"fmd":18.5,"fph":23.2,"lonely":35.9,"nosup":25.4,"housins":19.7,"foodins":22.1,"murder":54.1,"violent":1350,"commute":23.6,"pm25":8.6,"dd":6023,"hdd":4547,"cdd":1476},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Chula Vista, CA","st":"CA","reg":"West","pop":278548,"col":111.9,"rpp":111.9,"metro":"San Diego-Chula Vista-Carlsbad, CA","z":{"mental":0.682,"physical":0.023,"social":-1.175,"economic":0.225,"safety":0.976,"commute":-0.891,"air":-1.759,"climate":2.033,"income":0.858},"raw":{"inc":105101,"rent":2338,"unemp":4.7,"fmd":16.1,"fph":21.3,"lonely":37.4,"nosup":31.0,"housins":17.6,"foodins":19.7,"murder":1.8,"violent":363,"commute":29.7,"pm25":11.1,"dd":2332,"hdd":1598,"cdd":734},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Buffalo, NY","st":"NY","reg":"Northeast","pop":276618,"col":96.2,"rpp":95.8,"metro":"Buffalo-Cheektowaga, NY","z":{"mental":-0.829,"physical":-0.779,"social":-0.068,"economic":-1.415,"safety":-0.638,"commute":1.235,"air":0.502,"climate":-1.363,"income":-1.679},"raw":{"inc":52211,"rent":1142,"unemp":7.2,"fmd":18.8,"fph":24.4,"lonely":33.9,"nosup":28.2,"housins":22.9,"foodins":27.7,"murder":12.8,"violent":751,"commute":19.2,"pm25":7.3,"dd":7074,"hdd":6466,"cdd":608},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Fort Wayne, IN","st":"IN","reg":"Midwest","pop":273425,"col":92.5,"rpp":92.6,"metro":"Fort Wayne, IN","z":{"mental":-0.829,"physical":-0.159,"social":0.695,"economic":0.212,"safety":0.213,"commute":0.785,"air":-0.197,"climate":-1.179,"income":-0.745},"raw":{"inc":61436,"rent":1051,"unemp":4.0,"fmd":18.8,"fph":21.9,"lonely":33.5,"nosup":24.5,"housins":15.0,"foodins":19.7,"murder":10.9,"violent":285,"commute":21.5,"pm25":8.5,"dd":6817,"hdd":5968,"cdd":849},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Lubbock, TX","st":"TX","reg":"South","pop":272085,"col":91.6,"rpp":91.3,"metro":"Lubbock, TX","z":{"mental":-0.325,"physical":-0.376,"social":0.168,"economic":-0.221,"safety":-0.162,"commute":1.589,"air":1.855,"climate":-0.016,"income":-0.632},"raw":{"inc":62360,"rent":1236,"unemp":4.4,"fmd":17.9,"fph":22.8,"lonely":34.5,"nosup":26.5,"housins":17.9,"foodins":22.5,"murder":5.3,"violent":793,"commute":17.5,"pm25":5.0,"dd":5193,"hdd":3243,"cdd":1950},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"St. Petersburg, FL","st":"FL","reg":"South","pop":267073,"col":101.2,"rpp":100.9,"metro":"Tampa-St. Petersburg-Clearwater, FL","z":{"mental":-0.213,"physical":0.783,"social":0.439,"economic":0.652,"safety":0.132,"commute":0.033,"air":0.686,"climate":0.646,"income":-0.362},"raw":{"inc":73048,"rent":1805,"unemp":3.5,"fmd":17.7,"fph":17.3,"lonely":35.6,"nosup":24.0,"housins":14.2,"foodins":17.0,"murder":5.0,"violent":563,"commute":25.2,"pm25":7.0,"dd":4269,"hdd":357,"cdd":3912},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Toledo, OH","st":"OH","reg":"Midwest","pop":265651,"col":91.0,"rpp":91.5,"metro":"Toledo, OH","z":{"mental":-2.116,"physical":-1.136,"social":-0.396,"economic":-1.034,"safety":-0.867,"commute":1.087,"air":-0.604,"climate":-1.145,"income":-1.568},"raw":{"inc":50562,"rent":908,"unemp":7.4,"fmd":21.1,"fph":26.0,"lonely":39.3,"nosup":25.2,"housins":20.0,"foodins":25.3,"murder":12.6,"violent":1023,"commute":20.0,"pm25":9.2,"dd":6769,"hdd":5839,"cdd":930},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Laredo, TX","st":"TX","reg":"South","pop":261408,"col":87.0,"rpp":87.0,"metro":"Laredo, TX","z":{"mental":0.234,"physical":-2.459,"social":-0.554,"economic":-1.521,"safety":0.712,"commute":0.712,"air":-0.937,"climate":0.013,"income":-0.456},"raw":{"inc":61519,"rent":1062,"unemp":3.1,"fmd":16.9,"fph":32.6,"lonely":36.6,"nosup":28.4,"housins":25.3,"foodins":34.8,"murder":3.1,"violent":371,"commute":21.8,"pm25":9.7,"dd":5152,"hdd":811,"cdd":4340},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Port St. Lucie, FL","st":"FL","reg":"South","pop":258578,"col":104.9,"rpp":100.2,"metro":"Port St. Lucie, FL","z":{"mental":-0.549,"physical":0.571,"social":0.466,"economic":0.421,"safety":2.045,"commute":-1.618,"air":0.791,"climate":0.975,"income":0.243},"raw":{"inc":86241,"rent":2133,"unemp":5.2,"fmd":18.3,"fph":18.1,"lonely":34.7,"nosup":24.7,"housins":14.9,"foodins":18.4,"murder":1.5,"violent":99,"commute":33.3,"pm25":6.8,"dd":3809,"hdd":418,"cdd":3391},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Glendale, AZ","st":"AZ","reg":"West","pop":258121,"col":102.0,"rpp":103.3,"metro":"Phoenix-Mesa-Chandler, AZ","z":{"mental":0.29,"physical":-0.236,"social":-0.045,"economic":-0.125,"safety":0.129,"commute":-0.769,"air":-0.594,"climate":0.004,"income":-0.232},"raw":{"inc":75711,"rent":1708,"unemp":5.7,"fmd":16.8,"fph":22.3,"lonely":34.1,"nosup":27.9,"housins":16.7,"foodins":22.8,"murder":6.0,"violent":499,"commute":29.1,"pm25":9.2,"dd":5165,"hdd":1202,"cdd":3963},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Irving, TX","st":"TX","reg":"South","pop":258052,"col":103.3,"rpp":103.1,"metro":"Dallas-Fort Worth-Arlington, TX","z":{"mental":1.018,"physical":0.034,"social":-0.512,"economic":0.023,"safety":0.709,"commute":0.304,"air":-0.627,"climate":0.091,"income":0.239},"raw":{"inc":84849,"rent":1734,"unemp":4.3,"fmd":15.5,"fph":21.4,"lonely":37.2,"nosup":27.6,"housins":16.4,"foodins":22.2,"murder":4.7,"violent":282,"commute":23.8,"pm25":9.2,"dd":5044,"hdd":2220,"cdd":2824},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Winston-Salem, NC","st":"NC","reg":"South","pop":255782,"col":93.9,"rpp":92.0,"metro":"Winston-Salem, NC","z":{"mental":-0.213,"physical":-0.11,"social":0.58,"economic":-0.161,"safety":-0.7,"commute":1.047,"air":0.036,"climate":0.115,"income":-1.101},"raw":{"inc":57758,"rent":1271,"unemp":4.2,"fmd":17.7,"fph":21.8,"lonely":34.2,"nosup":24.5,"housins":17.3,"foodins":21.6,"murder":12.8,"violent":814,"commute":20.2,"pm25":8.1,"dd":5010,"hdd":3497,"cdd":1513},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Chesapeake, VA","st":"VA","reg":"South","pop":254997,"col":98.8,"rpp":97.9,"metro":"Virginia Beach-Chesapeake-Norfolk, VA-NC","z":{"mental":0.011,"physical":0.612,"social":1.152,"economic":0.818,"safety":0.58,"commute":-0.333,"air":0.596,"climate":0.165,"income":0.681},"raw":{"inc":89265,"rent":1630,"unemp":4.6,"fmd":17.3,"fph":18.2,"lonely":33.7,"nosup":21.9,"housins":12.7,"foodins":14.5,"murder":4.2,"violent":360,"commute":27.0,"pm25":7.2,"dd":4940,"hdd":2810,"cdd":2130},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Garland, TX","st":"TX","reg":"South","pop":250571,"col":102.6,"rpp":103.1,"metro":"Dallas-Fort Worth-Arlington, TX","z":{"mental":-0.045,"physical":-0.494,"social":-0.761,"economic":-0.461,"safety":0.993,"commute":-0.823,"air":-0.627,"climate":0.039,"income":-0.254},"raw":{"inc":75797,"rent":1679,"unemp":4.5,"fmd":17.4,"fph":23.7,"lonely":38.0,"nosup":28.2,"housins":19.0,"foodins":25.1,"murder":3.9,"violent":220,"commute":29.4,"pm25":9.2,"dd":5116,"hdd":1992,"cdd":3125},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Enterprise, NV","st":"NV","reg":"West","pop":250461,"col":104.2,"rpp":100.2,"metro":"Las Vegas-Henderson-North Las Vegas, NV","z":{"mental":-0.325,"physical":0.715,"social":-0.614,"economic":0.712,"safety":0.17,"commute":-0.132,"air":1.451,"climate":-0.276,"income":1.445},"raw":{"inc":111128,"rent":2090,"unemp":4.6,"fmd":17.9,"fph":17.7,"lonely":37.2,"nosup":28.2,"housins":13.4,"foodins":14.7,"murder":6.6,"violent":438,"commute":26.0,"pm25":5.7,"dd":5556,"hdd":1836,"cdd":3720},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Scottsdale, AZ","st":"AZ","reg":"West","pop":246183,"col":106.7,"rpp":103.3,"metro":"Phoenix-Mesa-Chandler, AZ","z":{"mental":1.969,"physical":2.133,"social":1.875,"economic":2.027,"safety":1.742,"commute":0.829,"air":0.693,"climate":-0.099,"income":1.068},"raw":{"inc":104893,"rent":2117,"unemp":2.8,"fmd":13.8,"fph":11.6,"lonely":29.9,"nosup":21.4,"housins":7.1,"foodins":8.3,"murder":1.2,"violent":165,"commute":21.2,"pm25":7.0,"dd":5309,"hdd":1139,"cdd":4170},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Arlington, VA","st":"VA","reg":"South","pop":239807,"col":112.8,"rpp":108.9,"metro":"Washington-Arlington-Alexandria, DC-VA-MD-WV","z":{"mental":2.361,"physical":2.061,"social":2.084,"economic":2.038,"safety":1.469,"commute":-0.453,"air":0.459,"climate":-0.241,"income":1.929},"raw":{"inc":133582,"rent":2347,"unemp":2.7,"fmd":13.1,"fph":11.9,"lonely":32.4,"nosup":18.1,"housins":7.2,"foodins":7.5,"murder":0.7,"violent":293,"commute":27.5,"pm25":7.4,"dd":5507,"hdd":3769,"cdd":1738},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Boise, ID","st":"ID","reg":"West","pop":237959,"col":97.4,"rpp":98.4,"metro":"Boise City, ID","z":{"mental":0.626,"physical":1.179,"social":2.606,"economic":1.371,"safety":1.224,"commute":1.077,"air":0.458,"climate":-0.856,"income":0.304},"raw":{"inc":81102,"rent":1535,"unemp":4.0,"fmd":16.2,"fph":15.3,"lonely":28.9,"nosup":18.4,"housins":9.9,"foodins":11.6,"murder":1.5,"violent":286,"commute":20.0,"pm25":7.4,"dd":6366,"hdd":5320,"cdd":1045},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Hialeah, FL","st":"FL","reg":"South","pop":235384,"col":112.0,"rpp":114.2,"metro":"Miami-Fort Lauderdale-West Palm Beach, FL","z":{"mental":0.962,"physical":-1.372,"social":0.399,"economic":-1.203,"safety":1.715,"commute":-0.928,"air":0.75,"climate":0.397,"income":-1.963},"raw":{"inc":57151,"rent":1913,"unemp":3.4,"fmd":15.6,"fph":27.2,"lonely":32.8,"nosup":26.7,"housins":23.9,"foodins":33.9,"murder":1.1,"violent":180,"commute":29.9,"pm25":6.9,"dd":4616,"hdd":122,"cdd":4494},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2024-2025"}},{"n":"Frisco, TX","st":"TX","reg":"South","pop":235221,"col":108.8,"rpp":103.1,"metro":"Dallas-Fort Worth-Arlington, TX","z":{"mental":1.913,"physical":1.927,"social":1.058,"economic":1.556,"safety":2.209,"commute":-0.412,"air":-0.013,"climate":0.102,"income":2.493},"raw":{"inc":145444,"rent":2200,"unemp":5.6,"fmd":13.9,"fph":12.6,"lonely":33.4,"nosup":22.6,"housins":8.4,"foodins":9.8,"murder":1.0,"violent":99,"commute":27.3,"pm25":8.2,"dd":5029,"hdd":2498,"cdd":2531},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Richmond, VA","st":"VA","reg":"South","pop":233655,"col":96.8,"rpp":97.9,"metro":"Richmond, VA","z":{"mental":-0.325,"physical":0.004,"social":0.126,"economic":-0.166,"safety":-0.521,"commute":0.548,"air":0.573,"climate":-0.09,"income":-0.811},"raw":{"inc":63390,"rent":1451,"unemp":4.6,"fmd":17.9,"fph":21.0,"lonely":37.4,"nosup":24.1,"housins":17.1,"foodins":20.6,"murder":24.6,"violent":383,"commute":22.6,"pm25":7.2,"dd":5297,"hdd":3736,"cdd":1560},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Cape Coral, FL","st":"FL","reg":"South","pop":233025,"col":103.8,"rpp":102.3,"metro":"Cape Coral-Fort Myers, FL","z":{"mental":-0.045,"physical":0.818,"social":1.181,"economic":0.845,"safety":1.654,"commute":-1.314,"air":1.3,"climate":0.626,"income":0.255},"raw":{"inc":85584,"rent":1998,"unemp":3.4,"fmd":17.4,"fph":17.0,"lonely":32.2,"nosup":23.0,"housins":13.5,"foodins":16.4,"murder":2.0,"violent":143,"commute":31.8,"pm25":6.0,"dd":4297,"hdd":252,"cdd":4046},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2022-2024"}},{"n":"Norfolk, VA","st":"VA","reg":"South","pop":231105,"col":96.4,"rpp":97.9,"metro":"Virginia Beach-Chesapeake-Norfolk, VA-NC","z":{"mental":-0.661,"physical":-0.129,"social":0.088,"economic":-0.09,"safety":-0.393,"commute":0.555,"air":0.596,"climate":0.173,"income":-0.619},"raw":{"inc":65797,"rent":1417,"unemp":3.8,"fmd":18.5,"fph":21.5,"lonely":37.4,"nosup":24.3,"housins":17.0,"foodins":20.6,"murder":15.5,"violent":472,"commute":22.6,"pm25":7.2,"dd":4929,"hdd":3106,"cdd":1822},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Spokane, WA","st":"WA","reg":"West","pop":230604,"col":99.6,"rpp":100.3,"metro":"Spokane-Spokane Valley, WA","z":{"mental":-0.941,"physical":0.441,"social":-0.233,"economic":0.889,"safety":-0.108,"commute":1.026,"air":0.78,"climate":-0.971,"income":0.053},"raw":{"inc":78583,"rent":1341,"unemp":4.8,"fmd":19.0,"fph":18.7,"lonely":37.2,"nosup":26.1,"housins":12.2,"foodins":13.7,"murder":6.1,"violent":669,"commute":20.3,"pm25":6.9,"dd":6526,"hdd":6019,"cdd":507},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Huntsville, AL","st":"AL","reg":"South","pop":230157,"col":92.6,"rpp":93.1,"metro":"Huntsville, AL","z":{"mental":0.346,"physical":0.323,"social":0.298,"economic":0.416,"safety":0.021,"commute":1.076,"air":0.256,"climate":0.166,"income":0.654},"raw":{"inc":83235,"rent":1241,"unemp":3.3,"fmd":16.7,"fph":19.8,"lonely":35.9,"nosup":24.5,"housins":14.5,"foodins":18.3,"murder":8.4,"violent":444,"commute":20.0,"pm25":7.7,"dd":4938,"hdd":2831,"cdd":2107},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2022-2025"}},{"n":"Santa Clarita, CA","st":"CA","reg":"West","pop":229175,"col":120.3,"rpp":113.6,"metro":"Los Angeles-Long Beach-Anaheim, CA","z":{"mental":0.514,"physical":0.624,"social":-1.16,"economic":0.917,"safety":1.677,"commute":-2.076,"air":-0.011,"climate":1.51,"income":1.253},"raw":{"inc":123011,"rent":2596,"unemp":4.8,"fmd":16.4,"fph":18.3,"lonely":39.7,"nosup":28.9,"housins":13.4,"foodins":14.5,"murder":1.3,"violent":173,"commute":35.5,"pm25":8.2,"dd":3063,"hdd":1226,"cdd":1837},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2025-2025"}},{"n":"Fremont, CA","st":"CA","reg":"West","pop":228191,"col":122.2,"rpp":115.6,"metro":"San Francisco-Oakland-Fremont, CA","z":{"mental":2.473,"physical":1.707,"social":-0.878,"economic":1.722,"safety":1.524,"commute":-1.391,"air":0.886,"climate":1.776,"income":2.832},"raw":{"inc":175816,"rent":2914,"unemp":4.6,"fmd":12.9,"fph":13.8,"lonely":38.0,"nosup":28.9,"housins":8.4,"foodins":10.5,"murder":1.9,"violent":172,"commute":32.2,"pm25":6.7,"dd":2691,"hdd":2264,"cdd":427},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Tacoma, WA","st":"WA","reg":"West","pop":228187,"col":107.0,"rpp":111.1,"metro":"Seattle-Tacoma-Bellevue, WA","z":{"mental":-0.829,"physical":0.533,"social":-0.409,"economic":0.638,"safety":-0.796,"commute":-0.858,"air":1.131,"climate":0.111,"income":0.156},"raw":{"inc":86328,"rent":1723,"unemp":5.4,"fmd":18.8,"fph":18.1,"lonely":36.5,"nosup":27.7,"housins":13.5,"foodins":15.6,"murder":10.8,"violent":1055,"commute":29.5,"pm25":6.3,"dd":5016,"hdd":4884,"cdd":132},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"McKinney, TX","st":"TX","reg":"South","pop":227515,"col":105.2,"rpp":103.1,"metro":"Dallas-Fort Worth-Arlington, TX","z":{"mental":0.962,"physical":1.262,"social":0.971,"economic":1.145,"safety":1.617,"commute":-1.313,"air":-0.627,"climate":0.102,"income":1.914},"raw":{"inc":124177,"rent":1900,"unemp":4.2,"fmd":15.6,"fph":15.5,"lonely":34.2,"nosup":22.4,"housins":11.1,"foodins":13.0,"murder":3.1,"violent":114,"commute":31.8,"pm25":9.2,"dd":5029,"hdd":2498,"cdd":2531},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"San Bernardino, CA","st":"CA","reg":"West","pop":224785,"col":102.2,"rpp":106.4,"metro":"Riverside-San Bernardino-Ontario, CA","z":{"mental":-1.165,"physical":-2.539,"social":-1.926,"economic":-1.569,"safety":-0.802,"commute":-1.267,"air":-2.405,"climate":1.383,"income":-0.752},"raw":{"inc":67753,"rent":1621,"unemp":4.5,"fmd":19.4,"fph":32.9,"lonely":40.0,"nosup":32.7,"housins":25.9,"foodins":33.3,"murder":12.4,"violent":953,"commute":31.5,"pm25":12.2,"dd":3240,"hdd":1386,"cdd":1854},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Spring Valley, NV","st":"NV","reg":"West","pop":221300,"col":101.1,"rpp":100.2,"metro":"Las Vegas-Henderson-North Las Vegas, NV","z":{"mental":-0.885,"physical":0.084,"social":-0.864,"economic":0.108,"safety":0.17,"commute":0.408,"air":1.474,"climate":-0.276,"income":-0.147},"raw":{"inc":76393,"rent":1814,"unemp":5.7,"fmd":18.9,"fph":20.5,"lonely":37.8,"nosup":29.0,"housins":15.9,"foodins":18.3,"murder":6.6,"violent":438,"commute":23.3,"pm25":5.7,"dd":5556,"hdd":1836,"cdd":3720},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Baton Rouge, LA","st":"LA","reg":"South","pop":220901,"col":90.1,"rpp":90.8,"metro":"Baton Rouge, LA","z":{"mental":-1.724,"physical":-1.163,"social":-1.067,"economic":-1.796,"safety":-1.351,"commute":0.737,"air":-0.633,"climate":0.586,"income":-1.548},"raw":{"inc":50332,"rent":1081,"unemp":7.3,"fmd":20.4,"fph":26.5,"lonely":37.2,"nosup":30.6,"housins":23.5,"foodins":30.3,"murder":26.9,"violent":1039,"commute":21.7,"pm25":9.2,"dd":4352,"hdd":1534,"cdd":2818},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2022-2023"}},{"n":"Modesto, CA","st":"CA","reg":"West","pop":220617,"col":104.8,"rpp":104.1,"metro":"Modesto, CA","z":{"mental":-1.221,"physical":-0.874,"social":-0.335,"economic":-0.353,"safety":0.442,"commute":-0.859,"air":-0.672,"climate":0.893,"income":-0.149},"raw":{"inc":79211,"rent":1822,"unemp":7.7,"fmd":19.5,"fph":24.9,"lonely":35.4,"nosup":28.3,"housins":18.4,"foodins":21.6,"murder":2.3,"violent":633,"commute":29.5,"pm25":9.3,"dd":3924,"hdd":2300,"cdd":1624},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Fontana, CA","st":"CA","reg":"West","pop":218453,"col":108.4,"rpp":106.4,"metro":"Riverside-San Bernardino-Ontario, CA","z":{"mental":0.122,"physical":-1.0,"social":-1.501,"economic":-0.349,"safety":0.926,"commute":-1.537,"air":-2.565,"climate":1.367,"income":1.162},"raw":{"inc":108735,"rent":2185,"unemp":5.3,"fmd":17.1,"fph":26.0,"lonely":38.8,"nosup":31.5,"housins":20.0,"foodins":24.1,"murder":3.4,"violent":266,"commute":32.9,"pm25":12.5,"dd":3263,"hdd":1293,"cdd":1970},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Salt Lake City, UT","st":"UT","reg":"West","pop":217783,"col":98.1,"rpp":100.9,"metro":"Salt Lake City-Murray, UT","z":{"mental":0.122,"physical":0.746,"social":0.968,"economic":0.813,"safety":-0.234,"commute":1.173,"air":0.712,"climate":-1.005,"income":0.041},"raw":{"inc":77186,"rent":1440,"unemp":5.6,"fmd":17.1,"fph":17.3,"lonely":34.7,"nosup":22.0,"housins":12.0,"foodins":15.5,"murder":5.3,"violent":869,"commute":19.6,"pm25":7.0,"dd":6574,"hdd":5154,"cdd":1420},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Moreno Valley, CA","st":"CA","reg":"West","pop":213893,"col":108.7,"rpp":106.4,"metro":"Riverside-San Bernardino-Ontario, CA","z":{"mental":-0.661,"physical":-1.448,"social":-1.336,"economic":-1.071,"safety":1.112,"commute":-3.238,"air":-2.125,"climate":1.14,"income":0.414},"raw":{"inc":92716,"rent":2206,"unemp":6.9,"fmd":18.5,"fph":27.8,"lonely":38.6,"nosup":30.8,"housins":23.4,"foodins":27.0,"murder":1.9,"violent":300,"commute":41.2,"pm25":11.7,"dd":3579,"hdd":2096,"cdd":1484},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2025-2025"}},{"n":"Des Moines, IA","st":"IA","reg":"Midwest","pop":213188,"col":90.8,"rpp":91.7,"metro":"Des Moines-West Des Moines, IA","z":{"mental":-0.941,"physical":-0.235,"social":-0.046,"economic":0.165,"safety":0.199,"commute":1.322,"air":0.558,"climate":-1.488,"income":-0.238},"raw":{"inc":67297,"rent":1107,"unemp":5.8,"fmd":19.0,"fph":21.9,"lonely":35.7,"nosup":26.5,"housins":15.0,"foodins":19.4,"murder":3.3,"violent":685,"commute":18.8,"pm25":7.2,"dd":7248,"hdd":6178,"cdd":1070},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Worcester, MA","st":"MA","reg":"Northeast","pop":211289,"col":103.2,"rpp":102.5,"metro":"Worcester, MA","z":{"mental":-1.276,"physical":-0.429,"social":-0.451,"economic":-0.566,"safety":0.485,"commute":0.437,"air":1.355,"climate":-1.4,"income":-0.577},"raw":{"inc":71042,"rent":1614,"unemp":6.1,"fmd":19.6,"fph":22.6,"lonely":36.9,"nosup":27.6,"housins":18.5,"foodins":23.0,"murder":3.3,"violent":473,"commute":23.2,"pm25":5.9,"dd":7125,"hdd":6622,"cdd":502},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Yonkers, NY","st":"NY","reg":"Northeast","pop":211062,"col":111.7,"rpp":112.6,"metro":"New York-Newark-Jersey City, NY-NJ","z":{"mental":0.85,"physical":0.316,"social":0.438,"economic":-0.387,"safety":0.763,"commute":-2.441,"air":0.288,"climate":-0.439,"income":-0.289},"raw":{"inc":81868,"rent":1789,"unemp":5.9,"fmd":15.8,"fph":19.6,"lonely":33.8,"nosup":25.6,"housins":19.7,"foodins":22.3,"murder":3.4,"violent":328,"commute":37.3,"pm25":7.7,"dd":5784,"hdd":4376,"cdd":1408},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Fayetteville, NC","st":"NC","reg":"South","pop":209485,"col":92.3,"rpp":92.0,"metro":"Fayetteville, NC","z":{"mental":-0.605,"physical":-0.167,"social":-0.126,"economic":-0.343,"safety":-0.816,"commute":1.1,"air":-0.079,"climate":0.277,"income":-1.286},"raw":{"inc":54562,"rent":1372,"unemp":6.0,"fmd":18.4,"fph":21.9,"lonely":36.3,"nosup":26.4,"housins":18.0,"foodins":22.2,"murder":18.0,"violent":722,"commute":19.9,"pm25":8.3,"dd":4784,"hdd":2734,"cdd":2050},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Sioux Falls, SD","st":"SD","reg":"Midwest","pop":209297,"col":90.8,"rpp":90.6,"metro":"Sioux Falls, SD-MN","z":{"mental":0.85,"physical":1.209,"social":1.645,"economic":1.332,"safety":0.448,"commute":1.678,"air":0.753,"climate":-2.096,"income":0.4},"raw":{"inc":77208,"rent":1105,"unemp":2.4,"fmd":15.8,"fph":15.7,"lonely":31.2,"nosup":21.4,"housins":10.2,"foodins":12.6,"murder":4.0,"violent":442,"commute":17.1,"pm25":6.9,"dd":8096,"hdd":7248,"cdd":847},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"Imputed from other PLACES measures","crime":"2023-2025"}},{"n":"Grand Prairie, TX","st":"TX","reg":"South","pop":207618,"col":103.4,"rpp":103.1,"metro":"Dallas-Fort Worth-Arlington, TX","z":{"mental":0.011,"physical":-0.513,"social":-0.698,"economic":-0.605,"safety":1.33,"commute":-0.729,"air":-0.627,"climate":0.158,"income":0.087},"raw":{"inc":82195,"rent":1744,"unemp":4.7,"fmd":17.3,"fph":23.8,"lonely":37.5,"nosup":28.4,"housins":19.8,"foodins":25.4,"murder":2.3,"violent":203,"commute":28.9,"pm25":9.2,"dd":4950,"hdd":2126,"cdd":2824},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2023-2025"}},{"n":"Rochester, NY","st":"NY","reg":"Northeast","pop":207287,"col":96.0,"rpp":97.0,"metro":"Rochester, NY","z":{"mental":-0.605,"physical":-1.045,"social":-0.557,"economic":-1.586,"safety":-0.8,"commute":1.301,"air":0.798,"climate":-1.275,"income":-2.167},"raw":{"inc":46882,"rent":1090,"unemp":4.9,"fmd":18.4,"fph":25.4,"lonely":36.4,"nosup":28.6,"housins":24.7,"foodins":29.5,"murder":19.5,"violent":664,"commute":18.9,"pm25":6.8,"dd":6950,"hdd":6273,"cdd":677},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Tallahassee, FL","st":"FL","reg":"South","pop":205091,"col":94.3,"rpp":93.9,"metro":"Tallahassee, FL","z":{"mental":-0.493,"physical":0.244,"social":0.645,"economic":-0.405,"safety":-0.328,"commute":1.269,"air":0.043,"climate":0.673,"income":-1.221},"raw":{"inc":56511,"rent":1369,"unemp":7.5,"fmd":18.2,"fph":19.9,"lonely":34.9,"nosup":23.6,"housins":17.3,"foodins":22.0,"murder":8.4,"violent":700,"commute":19.1,"pm25":8.1,"dd":4231,"hdd":1473,"cdd":2758},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2024 (BRFSS 2022), calibrated","crime":"2022-2025"}},{"n":"Little Rock, AR","st":"AR","reg":"South","pop":204793,"col":89.8,"rpp":89.4,"metro":"Little Rock-North Little Rock-Conway, AR","z":{"mental":-0.325,"physical":-0.285,"social":-0.375,"economic":-0.374,"safety":-1.626,"commute":1.345,"air":-1.359,"climate":0.012,"income":-0.239},"raw":{"inc":66553,"rent":1136,"unemp":4.0,"fmd":17.9,"fph":22.6,"lonely":35.3,"nosup":28.6,"housins":18.2,"foodins":21.8,"murder":23.5,"violent":1652,"commute":18.7,"pm25":10.5,"dd":5154,"hdd":3165,"cdd":1989},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Overland Park, KS","st":"KS","reg":"Midwest","pop":202909,"col":95.7,"rpp":92.5,"metro":"Kansas City, MO-KS","z":{"mental":2.249,"physical":2.197,"social":2.969,"economic":1.955,"safety":2.183,"commute":0.984,"air":0.596,"climate":-0.793,"income":1.416},"raw":{"inc":101372,"rent":1591,"unemp":2.8,"fmd":13.3,"fph":11.3,"lonely":28.3,"nosup":17.0,"housins":7.7,"foodins":7.4,"murder":0.0,"violent":184,"commute":20.5,"pm25":7.2,"dd":6277,"hdd":4926,"cdd":1351},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Augusta, GA","st":"GA","reg":"South","pop":201930,"col":92.7,"rpp":91.9,"metro":"Augusta-Richmond County, GA-SC","z":{"mental":-1.388,"physical":-0.977,"social":-0.855,"economic":-1.314,"safety":-0.412,"commute":0.616,"air":-1.019,"climate":0.45,"income":-0.959},"raw":{"inc":58803,"rent":1328,"unemp":8.0,"fmd":19.8,"fph":25.6,"lonely":38.2,"nosup":28.6,"housins":22.5,"foodins":27.0,"murder":17.3,"violent":442,"commute":22.3,"pm25":9.9,"dd":4543,"hdd":2182,"cdd":2361},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Columbus, GA","st":"GA","reg":"South","pop":201830,"col":89.6,"rpp":89.3,"metro":"Columbus, GA-AL","z":{"mental":-1.221,"physical":-0.718,"social":-0.693,"economic":-0.763,"safety":-0.121,"commute":0.415,"air":-0.729,"climate":0.498,"income":-0.944},"raw":{"inc":57010,"rent":1177,"unemp":5.1,"fmd":19.5,"fph":24.4,"lonely":38.7,"nosup":27.3,"housins":20.2,"foodins":24.4,"murder":10.1,"violent":464,"commute":23.3,"pm25":9.4,"dd":4475,"hdd":1942,"cdd":2534},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Mobile, AL","st":"AL","reg":"South","pop":201355,"col":88.4,"rpp":88.1,"metro":"Mobile, AL","z":{"mental":-0.381,"physical":-0.445,"social":-0.552,"economic":-0.679,"safety":-0.72,"commute":0.876,"air":0.044,"climate":0.599,"income":-1.02},"raw":{"inc":55307,"rent":1136,"unemp":4.8,"fmd":18.0,"fph":23.4,"lonely":35.8,"nosup":29.1,"housins":19.4,"foodins":25.9,"murder":14.9,"violent":741,"commute":21.0,"pm25":8.1,"dd":4335,"hdd":1404,"cdd":2931},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Oxnard, CA","st":"CA","reg":"West","pop":200637,"col":108.0,"rpp":110.5,"metro":"Oxnard-Thousand Oaks-Ventura, CA","z":{"mental":-0.213,"physical":-1.646,"social":-0.59,"economic":-0.722,"safety":0.422,"commute":-0.287,"air":1.184,"climate":2.26,"income":0.849},"raw":{"inc":101184,"rent":2111,"unemp":5.0,"fmd":17.7,"fph":29.0,"lonely":36.6,"nosup":28.6,"housins":22.3,"foodins":26.6,"murder":2.7,"violent":589,"commute":26.7,"pm25":6.2,"dd":2015,"hdd":1692,"cdd":324},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}},{"n":"Grand Rapids, MI","st":"MI","reg":"Midwest","pop":200131,"col":96.4,"rpp":95.5,"metro":"Grand Rapids-Wyoming-Kentwood, MI","z":{"mental":-0.493,"physical":0.133,"social":0.762,"economic":0.012,"safety":-0.499,"commute":1.24,"air":-0.67,"climate":-1.411,"income":-0.298},"raw":{"inc":70515,"rent":1362,"unemp":5.7,"fmd":18.2,"fph":20.2,"lonely":33.1,"nosup":24.5,"housins":15.6,"foodins":19.8,"murder":8.1,"violent":896,"commute":19.2,"pm25":9.3,"dd":7140,"hdd":6408,"cdd":732},"src":{"health":"PLACES 2025 (BRFSS 2023)","social":"PLACES 2025 (BRFSS 2023)","crime":"2023-2025"}}],"factors":[{"key":"nosupport","label":"Lacks social & emotional support","sd":-0.445,"se":0.013,"alone":-0.807,"dissat_pp":8.4},{"key":"fmd","label":"Frequent mental distress","sd":-0.394,"se":0.008,"alone":-0.857,"dissat_pp":11.3},{"key":"lonely","label":"Feels lonely","sd":-0.391,"se":0.007,"alone":-0.751,"dissat_pp":3.6},{"key":"fairpoor","label":"Fair or poor health","sd":-0.28,"se":0.011,"alone":-0.666,"dissat_pp":4.7},{"key":"unemployed","label":"Unemployed","sd":-0.149,"se":0.015,"alone":-0.416,"dissat_pp":5.5},{"key":"transport","label":"Lacks reliable transportation","sd":-0.137,"se":0.02,"alone":-0.71,"dissat_pp":6.3},{"key":"fpd","label":"Frequent physical distress","sd":-0.112,"se":0.009,"alone":-0.599,"dissat_pp":2.8},{"key":"housinsec","label":"Couldn't pay rent/mortgage/utilities","sd":-0.109,"se":0.021,"alone":-0.59,"dissat_pp":2.8},{"key":"unable_work","label":"Unable to work","sd":-0.104,"se":0.027,"alone":-0.659,"dissat_pp":4.0},{"key":"utilthreat","label":"Utility shut-off threat","sd":-0.074,"se":0.011,"alone":-0.551,"dissat_pp":1.2},{"key":"foodinsec","label":"Food insecure","sd":-0.015,"se":0.013,"alone":-0.531,"dissat_pp":1.3},{"key":"log_inc","label":"Household income doubled","sd":0.046,"se":0.004,"alone":0.188,"dissat_pp":-0.1},{"key":"partnered","label":"Married or partnered","sd":0.165,"se":0.008,"alone":0.404,"dissat_pp":-1.8}],"brfss_n":325940}</script>
+<script>
+(function () {
+  "use strict";
+  const DATA = JSON.parse(document.getElementById("data").textContent);
+  const DOMS = DATA.domains;
+  const CITIES = DATA.cities;
+  const KEYS = DOMS.map(d => d.key);
+  const CORE = KEYS.filter(k => k !== "income");
+  const svgNS = "http://www.w3.org/2000/svg";
+  const fmt1 = v => (Math.round(v * 10) / 10).toFixed(1);
+  const signed = v => { const r = Math.round(v * 10) / 10; return r === 0 ? "0.0" : (r > 0 ? "+" : "−") + Math.abs(r).toFixed(1); };
+  const money = v => "$" + Math.round(v).toLocaleString("en-US");
+
+  const DEFAULT_W = Object.fromEntries(DOMS.map(d => [d.key, d.w * 100]));
+  const personKeys = DOMS.filter(d => d.group === "person").map(d => d.key);
+  const placeKeys = DOMS.filter(d => d.group === "place").map(d => d.key);
+  const personTot = personKeys.reduce((s, k) => s + DEFAULT_W[k], 0);
+  const placeTot = placeKeys.reduce((s, k) => s + DEFAULT_W[k], 0);
+  const PRESETS = [
+    { id: "evidence", label: "Evidence-based", w: { ...DEFAULT_W } },
+    { id: "equal", label: "Equal", w: Object.fromEntries(KEYS.map(k => [k, k === "income" ? 0 : 12.5])) },
+    { id: "residents", label: "Residents only", w: Object.fromEntries(KEYS.map(k => [k, personKeys.includes(k) ? DEFAULT_W[k] * 100 / personTot : 0])) },
+    { id: "place", label: "Place-heavy", w: Object.fromEntries(KEYS.map(k => [k, personKeys.includes(k) ? DEFAULT_W[k] * 50 / personTot : placeKeys.includes(k) ? DEFAULT_W[k] * 50 / placeTot : 0])) },
+    { id: "money", label: "+ Purchasing power", w: Object.fromEntries(KEYS.map(k => [k, k === "income" ? 10 : DEFAULT_W[k] * 0.9])) },
+  ];
+
+  const state = { w: { ...DEFAULT_W }, x: "col", region: "All", sel: null, hover: null, sort: { key: "score", dir: -1 }, preset: "evidence" };
+
+  // ---------------------------------------------------------------- scoring
+  function compute() {
+    const tot = KEYS.reduce((s, k) => s + state.w[k], 0) || 1;
+    const comp = CITIES.map(c => KEYS.reduce((s, k) => s + state.w[k] * c.z[k], 0) / tot);
+    const m = comp.reduce((a, b) => a + b, 0) / comp.length;
+    const sd = Math.sqrt(comp.reduce((a, b) => a + (b - m) ** 2, 0) / comp.length) || 1;
+    CITIES.forEach((c, i) => { c.score = 100 + 10 * (comp[i] - m) / sd; c.xv = c[state.x]; });
+    const order = CITIES.slice().sort((a, b) => b.score - a.score);
+    order.forEach((c, i) => { c.rank = i + 1; });
+    const n = CITIES.length, mx = CITIES.reduce((s, c) => s + c.xv, 0) / n, my = 100;
+    let sxy = 0, sxx = 0, syy = 0;
+    CITIES.forEach(c => { sxy += (c.xv - mx) * (c.score - my); sxx += (c.xv - mx) ** 2; syy += (c.score - my) ** 2; });
+    const slope = sxy / sxx, icpt = my - slope * mx;
+    CITIES.forEach(c => { c.resid = c.score - (icpt + slope * c.xv); });
+    const vorder = CITIES.slice().sort((a, b) => b.resid - a.resid);
+    vorder.forEach((c, i) => { c.vrank = i + 1; });
+    return { slope, icpt, r: sxy / Math.sqrt(sxx * syy) };
+  }
+
+  // ---------------------------------------------------------------- weights panel
+  const sliders = {};
+  function buildWeights() {
+    const pr = document.getElementById("presets");
+    PRESETS.forEach(p => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = p.label; b.dataset.id = p.id;
+      b.addEventListener("click", () => { state.w = { ...p.w }; state.preset = p.id; syncSliders(); update(); });
+      pr.appendChild(b);
+    });
+    DOMS.forEach(d => {
+      const g = document.getElementById("g-" + d.group);
+      const row = document.createElement("div"); row.className = "wrow";
+      const lab = document.createElement("label"); lab.htmlFor = "w-" + d.key; lab.textContent = d.label;
+      const out = document.createElement("output"); out.htmlFor = "w-" + d.key; out.id = "o-" + d.key;
+      const inp = document.createElement("input"); inp.type = "range"; inp.id = "w-" + d.key; inp.min = 0; inp.max = 40; inp.step = 0.5;
+      inp.addEventListener("input", () => { state.w[d.key] = +inp.value; state.preset = null; update(); });
+      const sm = document.createElement("small"); sm.textContent = d.desc;
+      row.append(lab, out, inp, sm); g.appendChild(row);
+      sliders[d.key] = { inp, out };
+    });
+    syncSliders();
+  }
+  function syncSliders() {
+    KEYS.forEach(k => { sliders[k].inp.value = state.w[k]; });
+  }
+  function updateWeightLabels() {
+    const tot = KEYS.reduce((s, k) => s + state.w[k], 0) || 1;
+    KEYS.forEach(k => { sliders[k].out.textContent = Math.round(100 * state.w[k] / tot) + "%"; });
+    const pt = Math.round(100 * personKeys.reduce((s, k) => s + state.w[k], 0) / tot);
+    const lt = Math.round(100 * placeKeys.reduce((s, k) => s + state.w[k], 0) / tot);
+    document.querySelector("#g-person .wgroup-title").textContent = "How residents are doing · " + pt + "%";
+    document.querySelector("#g-place .wgroup-title").textContent = "Place conditions · " + lt + "%";
+    document.querySelectorAll("#presets button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.id === state.preset)));
+  }
+
+  // ---------------------------------------------------------------- controls
+  function buildControls() {
+    const dl = document.getElementById("city-list");
+    CITIES.slice().sort((a, b) => a.n.localeCompare(b.n)).forEach(c => { const o = document.createElement("option"); o.value = c.n; dl.appendChild(o); });
+    const q = document.getElementById("q");
+    q.addEventListener("input", () => {
+      const v = q.value.trim().toLowerCase();
+      if (!v) { state.sel = null; update(); return; }
+      const hit = CITIES.find(c => c.n.toLowerCase() === v) || CITIES.find(c => c.n.toLowerCase().startsWith(v));
+      if (hit && (hit.n.toLowerCase() === v || q.value.includes(","))) { selectCity(hit); }
+    });
+    q.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        const v = q.value.trim().toLowerCase();
+        const hit = CITIES.find(c => c.n.toLowerCase().startsWith(v)) || CITIES.find(c => c.n.toLowerCase().includes(v));
+        if (hit) { q.value = hit.n; selectCity(hit); }
+      } else if (e.key === "Escape") { q.value = ""; state.sel = null; update(); }
+    });
+    const reg = document.getElementById("region");
+    ["All", "Northeast", "Midwest", "South", "West"].forEach(r => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = r; b.dataset.r = r;
+      b.setAttribute("aria-pressed", String(r === state.region));
+      b.addEventListener("click", () => { state.region = r; reg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.r === r))); update(); });
+      reg.appendChild(b);
+    });
+    document.querySelectorAll("#xmode button").forEach(b => b.addEventListener("click", () => {
+      state.x = b.dataset.x; document.querySelectorAll("#xmode button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); update();
+    }));
+  }
+  function selectCity(c) {
+    state.sel = c ? c.n : null;
+    if (c && state.region !== "All" && c.reg !== state.region) {
+      state.region = "All";
+      document.querySelectorAll("#region button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.r === "All")));
+    }
+    update();
+  }
+  const inRegion = c => state.region === "All" || c.reg === state.region;
+
+  // ---------------------------------------------------------------- scatter
+  const svg = document.getElementById("scatter");
+  const tip = document.getElementById("tip");
+  const measureCtx = document.createElement("canvas").getContext("2d");
+  function textW(s, weight) { measureCtx.font = (weight || 500) + " 11px 'Public Sans', system-ui, sans-serif"; return measureCtx.measureText(s).width; }
+  function niceTicks(lo, hi, n) {
+    const raw = (hi - lo) / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), e = raw / mag;
+    const step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
+    const t = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) t.push(+v.toFixed(6));
+    return t;
+  }
+  function el(name, attrs, parent) {
+    const e = document.createElementNS(svgNS, name);
+    for (const k in attrs) {
+      const v = attrs[k];
+      if (typeof v === "string" && v.startsWith("var(")) e.style.setProperty(k, v); else e.setAttribute(k, v);
+    }
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  let geom = null, dotEls = new Map();
+  function drawScatter(fit) {
+    const W = svg.clientWidth || 700;
+    const H = Math.max(360, Math.min(600, W * 0.68));
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H);
+    const m = { l: 46, r: 14, t: 14, b: 46 };
+    const xs = CITIES.map(c => c.xv), ys = CITIES.map(c => c.score);
+    const x0 = Math.floor(Math.min(...xs) - 1.5), x1 = Math.ceil(Math.max(...xs) + 1.5);
+    const y0 = Math.floor(Math.min(...ys) - 3), y1 = Math.ceil(Math.max(...ys) + 3);
+    const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+    const Y = v => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+    geom = { W, H, m, X, Y };
+    // static layers rebuilt; dots kept for transitions
+    let g = svg.querySelector("g.frame");
+    if (g) g.remove();
+    g = el("g", { class: "frame" });
+    svg.insertBefore(g, svg.firstChild);
+    niceTicks(y0, y1, 6).forEach(v => {
+      el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), stroke: "var(--grid)", "stroke-width": 1 }, g);
+      const t = el("text", { x: m.l - 8, y: Y(v) + 4, "text-anchor": "end", class: "tick" }, g); t.textContent = v;
+    });
+    niceTicks(x0, x1, Math.max(4, Math.round(W / 110))).forEach(v => {
+      el("line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, stroke: "var(--grid)", "stroke-width": 1 }, g);
+      const t = el("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle", class: "tick" }, g); t.textContent = v;
+    });
+    if (100 > x0 && 100 < x1) el("line", { x1: X(100), x2: X(100), y1: m.t, y2: H - m.b, stroke: "var(--axis)", "stroke-width": 1.25 }, g);
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(100), y2: Y(100), stroke: "var(--axis)", "stroke-width": 1.25 }, g);
+    el("line", { x1: X(x0), x2: X(x1), y1: Y(fit.icpt + fit.slope * x0), y2: Y(fit.icpt + fit.slope * x1), stroke: "var(--muted)", "stroke-width": 1.25 }, g);
+    const xt = el("text", { x: (m.l + W - m.r) / 2, y: H - 8, "text-anchor": "middle", class: "axis-title" }, g);
+    xt.textContent = state.x === "col" ? "Cost of living, city-adjusted (US average = 100)" : "Metro price level, BEA Regional Price Parity (US = 100)";
+    const yt = el("text", { transform: `translate(12 ${(m.t + H - m.b) / 2}) rotate(-90)`, "text-anchor": "middle", class: "axis-title" }, g);
+    yt.textContent = "Well-being index (city avg = 100)";
+    const q1 = el("text", { x: m.l + 8, y: m.t + 14, class: "quad" }, g); q1.textContent = "Higher well-being, lower cost";
+    const q2 = el("text", { x: W - m.r - 8, y: H - m.b - 8, class: "quad", "text-anchor": "end" }, g); q2.textContent = "Lower well-being, higher cost";
+
+    // dots
+    let dg = svg.querySelector("g.dots");
+    if (!dg) dg = el("g", { class: "dots" }, svg);
+    const maxPop = Math.max(...CITIES.map(c => c.pop));
+    const sorted = CITIES.slice().sort((a, b) => b.pop - a.pop);
+    sorted.forEach(c => {
+      let d = dotEls.get(c.n);
+      const r = 3.5 + 13 * Math.sqrt(c.pop / maxPop);
+      if (!d) {
+        d = el("circle", { class: "dot", cx: 0, cy: 0, r: r.toFixed(2) }, dg);
+        dotEls.set(c.n, d);
+      }
+      dg.appendChild(d);
+      c.px = X(c.xv); c.py = Y(c.score); c.r = r;
+      d.style.transform = `translate(${c.px.toFixed(1)}px, ${c.py.toFixed(1)}px)`;
+      const on = inRegion(c);
+      const isSel = state.sel === c.n, isHov = state.hover === c.n;
+      d.style.fill = isSel ? "var(--emph)" : on ? "var(--series)" : "var(--axis)";
+      d.style.fillOpacity = isSel ? 1 : on ? (isHov ? 0.95 : 0.6) : 0.35;
+      d.style.stroke = isHov && !isSel ? "var(--ink)" : "var(--surface)";
+      d.style.strokeWidth = isHov ? 2 : 1.5;
+    });
+    // bring highlighted to front
+    [state.hover, state.sel].forEach(n => { if (n && dotEls.get(n)) dg.appendChild(dotEls.get(n)); });
+    drawLabels();
+  }
+  function drawLabels() {
+    let lg = svg.querySelector("g.labels");
+    if (lg) lg.remove();
+    lg = el("g", { class: "labels", "pointer-events": "none" }, svg);
+    const { W, H, m } = geom;
+    const vis = CITIES.filter(inRegion);
+    const pick = [];
+    const add = c => { if (c && !pick.includes(c)) pick.push(c); };
+    if (state.sel) add(CITIES.find(c => c.n === state.sel));
+    const byScore = vis.slice().sort((a, b) => b.score - a.score);
+    byScore.slice(0, 6).forEach(add);
+    byScore.slice(-5).forEach(add);
+    vis.slice().sort((a, b) => b.pop - a.pop).slice(0, W < 560 ? 4 : 8).forEach(add);
+    const byX = vis.slice().sort((a, b) => a.xv - b.xv);
+    byX.slice(0, 2).forEach(add); byX.slice(-3).forEach(add);
+    const placed = [];
+    const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    const maxLabels = W < 560 ? 12 : 26;
+    let count = 0;
+    pick.forEach(c => {
+      if (count >= maxLabels) return;
+      const isSel = c.n === state.sel;
+      const name = vis.filter(o => o.n.split(",")[0] === c.n.split(",")[0]).length > 1 || isSel ? c.n : c.n.split(",")[0];
+      const tw = textW(name, isSel ? 700 : 500), th = 13, pad = c.r + 3;
+      const cands = [
+        { x: c.px + pad, y: c.py - th / 2 - 1, a: "start" }, { x: c.px - pad - tw, y: c.py - th / 2 - 1, a: "end" },
+        { x: c.px - tw / 2, y: c.py - pad - th, a: "middle" }, { x: c.px - tw / 2, y: c.py + pad, a: "middle" },
+      ];
+      for (const p of cands) {
+        const box = { x: p.x - 2, y: p.y, w: tw + 4, h: th };
+        if (box.x < m.l || box.x + box.w > W - m.r || box.y < m.t || box.y + box.h > H - m.b) continue;
+        if (placed.some(b => overlaps(b, box))) continue;
+        if (!isSel && vis.some(o => o !== c && Math.hypot(o.px - Math.max(box.x, Math.min(o.px, box.x + box.w)), o.py - Math.max(box.y, Math.min(o.py, box.y + box.h))) < o.r * 0.8)) continue;
+        placed.push(box);
+        const tx = p.a === "start" ? p.x : p.a === "end" ? p.x + tw : p.x + tw / 2;
+        const t = el("text", { x: tx, y: p.y + 10, "text-anchor": p.a, class: "lbl" + (isSel ? " sel" : "") }, lg);
+        t.textContent = name; count++;
+        break;
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------- tooltip
+  function fillTip(box, c) {
+    box.replaceChildren();
+    const head = document.createElement("div");
+    const nm = document.createElement("div"); nm.className = "tip-name"; nm.textContent = c.n;
+    const mt = document.createElement("div"); mt.className = "tip-metro"; mt.textContent = c.metro + " · pop. " + c.pop.toLocaleString("en-US");
+    head.append(nm, mt);
+    const k = document.createElement("div"); k.className = "tip-kpis";
+    const kpi = (v, l) => { const d = document.createElement("div"); d.className = "tip-kpi"; const b = document.createElement("b"); b.textContent = v; const s = document.createElement("span"); s.textContent = l; d.append(b, s); return d; };
+    k.append(kpi(fmt1(c.score), "Well-being · #" + c.rank + " of " + CITIES.length), kpi(fmt1(c.xv), (state.x === "col" ? "Cost of living" : "Metro price level") + " · " + signed(c.resid) + " vs. trend"));
+    const rows = document.createElement("div"); rows.className = "dom-rows";
+    DOMS.filter(d => d.key !== "income" || state.w.income > 0).forEach(d => {
+      const z = c.z[d.key];
+      const r = document.createElement("div"); r.className = "dom-row";
+      const l = document.createElement("span"); l.textContent = d.label;
+      const bar = document.createElement("span"); bar.className = "dbar";
+      const i = document.createElement("i");
+      const wpct = Math.min(Math.abs(z), 3) / 3 * 50;
+      i.style.width = wpct + "%"; i.style.left = z >= 0 ? "50%" : (50 - wpct) + "%";
+      i.style.background = z >= 0 ? "var(--pos)" : "var(--neg)";
+      bar.appendChild(i);
+      const v = document.createElement("span"); v.className = "val"; v.textContent = signed(z);
+      r.append(l, bar, v); rows.appendChild(r);
+    });
+    const f = document.createElement("div"); f.className = "tip-facts";
+    const R = c.raw;
+    f.textContent = `Median household income ${money(R.inc)} · median rent ${money(R.rent)}/mo · homicides ${R.murder} and violent crimes ${R.violent.toLocaleString("en-US")} per 100k · commute ${R.commute} min · PM2.5 ${R.pm25} µg/m³ · lonely ${R.lonely}% · frequent mental distress ${R.fmd}%`;
+    box.append(head, k, rows, f);
+    if (c.src.social && c.src.social.startsWith("Imputed")) {
+      const fl = document.createElement("div"); fl.className = "tip-flag"; fl.textContent = "Social-needs measures imputed: no CDC estimate for this state.";
+      box.appendChild(fl);
+    }
+  }
+  function showTip(c) {
+    if (!c) { tip.hidden = true; return; }
+    fillTip(tip, c);
+    tip.hidden = false;
+    const card = svg.parentElement, sr = svg.getBoundingClientRect(), cr = card.getBoundingClientRect();
+    const scale = sr.width / geom.W;
+    const px = sr.left - cr.left + c.px * scale, py = sr.top - cr.top + c.py * scale;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = px + c.r + 14;
+    if (left + tw > cr.width - 8) left = px - c.r - 14 - tw;
+    if (left < 8) left = Math.max(8, Math.min(cr.width - tw - 8, px - tw / 2));
+    let top = Math.max(8, Math.min(py - th / 2, cr.height - th - 8));
+    tip.style.left = left + "px"; tip.style.top = top + "px";
+  }
+  function nearest(evt) {
+    const sr = svg.getBoundingClientRect(), scale = sr.width / geom.W;
+    const mx = (evt.clientX - sr.left) / scale, my = (evt.clientY - sr.top) / scale;
+    let best = null, bd = Infinity;
+    CITIES.forEach(c => { if (!inRegion(c)) return; const d = Math.hypot(c.px - mx, c.py - my) - c.r; if (d < bd) { bd = d; best = c; } });
+    return bd < 18 / scale + 6 ? best : null;
+  }
+  svg.addEventListener("pointermove", e => {
+    if (e.pointerType === "touch") return;
+    const c = nearest(e);
+    const n = c ? c.n : null;
+    if (n !== state.hover) { state.hover = n; drawScatter(lastFit); }
+    showTip(c || (state.sel ? CITIES.find(x => x.n === state.sel) : null));
+    svg.style.cursor = c ? "pointer" : "default";
+  });
+  svg.addEventListener("pointerleave", () => {
+    state.hover = null; drawScatter(lastFit);
+    showTip(state.sel ? CITIES.find(x => x.n === state.sel) : null);
+  });
+  svg.addEventListener("click", e => {
+    const c = nearest(e);
+    document.getElementById("q").value = c ? c.n : "";
+    selectCity(c && c.n !== state.sel ? c : null);
+  });
+
+  // ---------------------------------------------------------------- table
+  const COLS = [
+    { key: "rank", label: "#", get: c => c.rank, f: v => v },
+    { key: "n", label: "City", get: c => c.n, f: v => v, str: true },
+    { key: "score", label: "Well-being", get: c => c.score, f: fmt1 },
+    { key: "xv", label: "Cost", get: c => c.xv, f: fmt1 },
+    { key: "resid", label: "Vs. trend", get: c => c.resid, f: signed },
+    ...CORE.map(k => ({ key: "z_" + k, label: DOMS.find(d => d.key === k).label.replace(" health", "").replace("Economic security", "Economic").replace("Social connection", "Social").replace("Air quality", "Air"), get: c => c.z[k], f: signed, z: true })),
+    { key: "inc", label: "Income", get: c => c.raw.inc, f: v => "$" + Math.round(v / 1000) + "k" },
+    { key: "pop", label: "Population", get: c => c.pop, f: v => v.toLocaleString("en-US") },
+  ];
+  function buildTableHead() {
+    const tr = document.createElement("tr");
+    COLS.forEach(col => {
+      const th = document.createElement("th"); th.scope = "col";
+      const b = document.createElement("button"); b.type = "button"; b.textContent = col.label;
+      b.addEventListener("click", () => {
+        if (state.sort.key === col.key) state.sort.dir *= -1; else state.sort = { key: col.key, dir: col.str || col.key === "rank" ? 1 : -1 };
+        drawTable();
+      });
+      b.dataset.key = col.key; th.appendChild(b); tr.appendChild(th);
+    });
+    document.querySelector("#tbl thead").appendChild(tr);
+  }
+  function drawTable() {
+    const tb = document.querySelector("#tbl tbody");
+    tb.replaceChildren();
+    const col = COLS.find(c => c.key === state.sort.key);
+    const rows = CITIES.filter(inRegion).sort((a, b) => {
+      const va = col.get(a), vb = col.get(b);
+      return (col.str ? String(va).localeCompare(String(vb)) : va - vb) * state.sort.dir;
+    });
+    document.querySelectorAll("#tbl th button").forEach(b => {
+      const on = b.dataset.key === state.sort.key;
+      b.dataset.active = String(on);
+      b.parentElement.setAttribute("aria-sort", on ? (state.sort.dir > 0 ? "ascending" : "descending") : "none");
+    });
+    rows.forEach(c => {
+      const tr = document.createElement("tr");
+      if (c.n === state.sel) tr.className = "is-sel";
+      COLS.forEach(cl => {
+        const td = document.createElement("td");
+        const v = cl.get(c);
+        td.textContent = cl.f(v);
+        if (cl.z) {
+          td.className = "z";
+          const a = Math.min(Math.abs(v), 2.5) / 2.5 * 32;
+          td.style.background = `color-mix(in oklab, ${v >= 0 ? "var(--pos)" : "var(--neg)"} ${a.toFixed(0)}%, transparent)`;
+        }
+        if (cl.key === "n" && c.src.social && c.src.social.startsWith("Imputed")) {
+          const s = document.createElement("span"); s.className = "flag"; s.textContent = " †"; s.title = "Social-needs measures imputed"; td.appendChild(s);
+        }
+        tr.appendChild(td);
+      });
+      tr.addEventListener("click", () => {
+        document.getElementById("q").value = c.n; selectCity(c);
+        svg.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+      });
+      tb.appendChild(tr);
+    });
+  }
+
+  // ---------------------------------------------------------------- factor chart
+  const fsvg = document.getElementById("factors"), ftip = document.getElementById("ftip");
+  function drawFactors() {
+    const F = DATA.factors;
+    const W = fsvg.clientWidth || 600;
+    const narrow = W < 520;
+    const labW = narrow ? 150 : 210, rowH = 26, m = { t: 6, r: 14, b: 34, l: labW };
+    const H = m.t + m.b + rowH * F.length;
+    fsvg.setAttribute("viewBox", `0 0 ${W} ${H}`); fsvg.setAttribute("height", H);
+    fsvg.replaceChildren();
+    const lo = -0.9, hi = 0.45;
+    const X = v => m.l + (v - lo) / (hi - lo) * (W - m.l - m.r);
+    [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4].forEach(v => {
+      el("line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": v === 0 ? 1.25 : 1 }, fsvg);
+      const t = el("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle", class: "tick" }, fsvg);
+      t.textContent = v === 0 ? "0" : (v > 0 ? "+" : "−") + Math.abs(v).toFixed(1);
+    });
+    const at = el("text", { x: (m.l + W - m.r) / 2, y: H - 4, "text-anchor": "middle", class: "axis-title" }, fsvg);
+    at.textContent = "Standard deviations of life satisfaction";
+    F.forEach((f, i) => {
+      const y = m.t + i * rowH + rowH / 2;
+      const lab = el("text", { x: m.l - 10, y: y + 4, "text-anchor": "end", class: "tick", style: "fill:var(--ink-2);font-size:12px" }, fsvg);
+      let name = f.label;
+      if (narrow && name.length > 24) name = name.replace("Couldn't pay rent/mortgage/utilities", "Couldn't pay housing bills").replace("Lacks social & emotional support", "Lacks emotional support").replace("Lacks reliable transportation", "Lacks transportation");
+      lab.textContent = name;
+      const x0 = X(Math.min(0, f.sd)), w = Math.abs(X(f.sd) - X(0));
+      const bh = 12;
+      el("rect", { x: x0, y: y - bh / 2, width: Math.max(w, 1), height: bh, rx: 3, fill: f.sd < 0 ? "var(--neg)" : "var(--pos)" }, fsvg);
+      el("line", { x1: X(f.sd - 1.96 * f.se), x2: X(f.sd + 1.96 * f.se), y1: y, y2: y, stroke: "var(--ink)", "stroke-opacity": 0.55, "stroke-width": 1 }, fsvg);
+      el("line", { x1: X(f.alone), x2: X(f.alone), y1: y - 8, y2: y + 8, stroke: "var(--ink)", "stroke-width": 2, "stroke-linecap": "round" }, fsvg);
+      const hit = el("rect", { x: 0, y: y - rowH / 2, width: W, height: rowH, fill: "transparent", tabindex: 0, "aria-label": `${f.label}: ${f.sd} SD` }, fsvg);
+      const show = () => {
+        ftip.replaceChildren();
+        const a = document.createElement("div"); a.className = "tip-name"; a.textContent = f.label;
+        const b = document.createElement("div"); b.className = "tip-kpis";
+        const mk = (v, l) => { const d = document.createElement("div"); d.className = "tip-kpi"; const s = document.createElement("b"); s.textContent = v; const t = document.createElement("span"); t.textContent = l; d.append(s, t); return d; };
+        b.append(mk((f.sd >= 0 ? "+" : "−") + Math.abs(f.sd).toFixed(2), "SD, other factors held constant"), mk((f.dissat_pp >= 0 ? "+" : "−") + Math.abs(f.dissat_pp).toFixed(1) + " pts", "chance of being dissatisfied"));
+        const c = document.createElement("div"); c.className = "tip-facts"; c.textContent = `On its own: ${(f.alone >= 0 ? "+" : "−") + Math.abs(f.alone).toFixed(2)} SD. 95% CI ${(f.sd - 1.96 * f.se).toFixed(2)} to ${(f.sd + 1.96 * f.se).toFixed(2)}.`;
+        ftip.append(a, b, c); ftip.hidden = false;
+        const sr = fsvg.getBoundingClientRect(), cr = fsvg.parentElement.getBoundingClientRect(), sc = sr.width / W;
+        const top = sr.top - cr.top + (y + rowH / 2) * sc + 6;
+        ftip.style.top = Math.min(top, cr.height - ftip.offsetHeight - 8) + "px";
+        ftip.style.left = Math.max(8, Math.min(cr.width - ftip.offsetWidth - 8, sr.left - cr.left + X(f.sd) * sc - ftip.offsetWidth / 2)) + "px";
+      };
+      hit.addEventListener("pointerenter", show); hit.addEventListener("focus", show);
+      hit.addEventListener("pointerleave", () => { ftip.hidden = true; }); hit.addEventListener("blur", () => { ftip.hidden = true; });
+    });
+  }
+
+  // ---------------------------------------------------------------- findings
+  function fillFindings(fit) {
+    document.getElementById("f-r").textContent = "r = " + fit.r.toFixed(2);
+    const v = CITIES.slice().sort((a, b) => b.resid - a.resid);
+    const top = v.slice(0, 6).map(c => c.n.split(",")[0]);
+    const bot = v.slice(-5).reverse().map(c => c.n.split(",")[0]);
+    document.getElementById("f-best").textContent = top[0];
+    document.getElementById("f-best-p").textContent = `Most well-being for the cost: ${top.join(", ")}. Least: ${bot.join(", ")}. Large affluent suburbs and mid-size cities of the Plains and Mountain West do best; older industrial cores and the Inland Empire do worst.`;
+  }
+
+  // ---------------------------------------------------------------- update loop
+  let lastFit = null;
+  function update() {
+    lastFit = compute();
+    updateWeightLabels();
+    drawScatter(lastFit);
+    document.getElementById("chart-sub").textContent = `r = ${lastFit.r.toFixed(2)} · trend ${lastFit.slope >= 0 ? "+" : "−"}${Math.abs(lastFit.slope).toFixed(2)} well-being points per cost point`;
+    showTip(state.sel ? CITIES.find(c => c.n === state.sel) : null);
+    drawTable();
+  }
+
+  buildWeights();
+  buildControls();
+  buildTableHead();
+  update();
+  fillFindings(lastFit);
+  drawFactors();
+  let rt;
+  const ro = new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { drawScatter(lastFit); drawFactors(); showTip(state.sel ? CITIES.find(c => c.n === state.sel) : null); }, 80); });
+  ro.observe(svg); ro.observe(fsvg);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawScatter(lastFit); });
+})();
+</script>

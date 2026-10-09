@@ -1,0 +1,7 @@
+variant,spearman_vs_base,top20_overlap,corr_with_cost
+equal_weights,0.965,19,0.216
+person_only,0.977,18,0.116
+place_heavy_50_50,0.977,18,0.178
+very_satisfied_coefs,0.993,18,0.098
+no_climate,0.997,19,0.124
+with_purchasing_power_10pct,0.992,20,0.214

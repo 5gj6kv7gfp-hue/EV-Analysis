@@ -1,0 +1,50 @@
+{
+  "weights": {
+    "mental": 0.0841,
+    "physical": 0.1756,
+    "social": 0.2821,
+    "economic": 0.1583,
+    "safety": 0.15,
+    "commute": 0.07,
+    "air": 0.04,
+    "climate": 0.04
+  },
+  "labels": {
+    "mental": "Mental health",
+    "physical": "Physical health",
+    "social": "Social connection",
+    "economic": "Economic security",
+    "safety": "Safety",
+    "commute": "Commute",
+    "air": "Air quality",
+    "climate": "Climate",
+    "income": "Purchasing power"
+  },
+  "person_domain_sd_ls_points": {
+    "mental": 0.00439,
+    "physical": 0.00916,
+    "social": 0.01472,
+    "economic": 0.00826
+  },
+  "brfss_coefficients": {
+    "fmd": -0.2456,
+    "fpd": -0.0695,
+    "fairpoor": -0.1742,
+    "lonely": -0.2436,
+    "nosupport": -0.2775,
+    "foodinsec": -0.0096,
+    "housinsec": -0.068,
+    "utilthreat": -0.0458,
+    "transport": -0.0851,
+    "unemployed": -0.0925,
+    "unable_work": -0.0646,
+    "partnered": 0.103,
+    "log_inc": 0.041
+  },
+  "trend": {
+    "slope": 0.19418813439681026,
+    "intercept": 80.36285654911481,
+    "r": 0.15090959718088873
+  },
+  "n_cities": 130
+}
