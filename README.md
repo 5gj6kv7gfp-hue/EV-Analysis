@@ -1,4 +1,4 @@
-# Ohio vote-by-mail by precinct: 2022 vs 2026 (Franklin County)
+# Early vote analysis 2026: Ohio (Franklin County) precinct VBM, plus multi-state checks
 
 Compares precinct-level vote-by-mail (VBM) activity in the **November 2022** and
 **November 2026** general elections, and how the change varies with precinct partisanship.
@@ -238,6 +238,95 @@ The most useful next step is to save the daily mail and in-person lists, then re
 vote-history breakdown on **ballots actually cast** each week. That shows whether infrequent
 voters' share of early votes is rising in D or R areas as Election Day approaches.
 
+## Multi-state early vote: what can realistically be read from it? (Oct 14, 2026)
+
+By mid-October, outlets are reporting signs of a Democratic early-vote edge across many states.
+Two checks below use public voter-level files to test how much those readings can bear.
+
+### North Carolina: same-day comparison and a 2014–2024 backtest (`scripts/nc_early_vote.py`)
+
+NC publishes a statewide voter-level absentee file with party registration and return dates. Each
+past election's final file therefore rebuilds the early electorate at **any** number of days
+before Election Day. Requests are confidential until a ballot is returned, so accepted *returns*
+are the measure. 2026 data run through **21 days out**.
+
+| Year | Returns by day −21 | % D | % R | % Unaff. | D − R | Final top-race D two-party share |
+|---|---:|---:|---:|---:|---:|---:|
+| 2014 | 10,334 | 41.4 | 37.0 | 21.6 | +4.4 | 49.2 (Senate) |
+| 2016 | 49,866 | 35.2 | 39.2 | 25.5 | −4.0 | 48.1 (Pres) |
+| 2018 | 13,977 | 43.6 | 26.2 | 30.3 | +17.4 | 49.6 (Sup. Ct.) |
+| 2020 | 516,452 | 50.8 | 17.9 | 31.2 | +32.9 | 49.3 (Pres) |
+| 2022 | 43,638 | 49.5 | 16.7 | 33.8 | +32.8 | 48.4 (Senate) |
+| 2024 | 67,224 | 37.3 | 27.1 | 35.6 | +10.1 | 48.4 (Pres) |
+| **2026** | **29,469** | **44.6** | **16.7** | **38.7** | **+28.0** | ? |
+
+![nc](output/nc_early_margin_vs_result.png)
+
+- **At equal days out, NC 2026 is *less* Democratic than 2022, not more.** Returns are down 32%.
+  The D share is 44.6% against 49.5%, the R share is flat, and unaffiliated voters make up the
+  difference. The Democrat-friendly reading (NBC News: D return *rate* up from 17% to 22%) comes from fewer
+  Democratic requests, which is the shift away from mail that NBC describes.
+- **The early D − R margin has almost no relationship to the outcome.** At day −21 it ranged
+  from −4 to +33. The final result moved only between 48.1% and 49.6% D. 2020 and 2022 had
+  nearly identical early margins (+33) and different results. Correlation across six elections
+  is 0.31, and across the three midterms it's −0.71 (the wrong sign).
+- **Changes from one cycle to the next are too noisy to use.** The day −21 margin moved 13–37
+  points between comparable elections, while results moved 0.4–1.2 points. The direction matched
+  the result's direction 3 of 4 times.
+- **The full early vote isn't much better.** It was 42–85% of all votes cast. Its D − R margin fell
+  every cycle (−3 to −6 points), whether Democrats gained or lost: registration drift (D → unaffiliated,
+  R gains) moves faster than results do. The correlation with the outcome is 0.45 over six points.
+
+### Ohio: how much of "more Democratic than 2024" is relabeling? (`scripts/ohio_label_artifact.py`)
+
+Ohio has no party registration. Franklin's party code is the voter's **2026 primary ballot,
+otherwise their 2024 one** (this rule reproduces 99.7% of codes). In October 2024 the same rule
+used the 2024 primary, otherwise 2022. Below, the **same 21,551 Franklin voters** who have cast
+2026 ballots (returned mail plus early in-person, through Oct 12) are labeled both ways:
+
+| Group | Ballots | D − R, current labels | D − R, Oct-2024 labels | Relabeling only |
+|---|---:|---:|---:|---:|
+| All ballots cast | 21,551 | D+39.1 | D+27.1 | **+12.0** |
+| Early in-person | 15,983 | D+47.3 | D+33.8 | +13.4 |
+| Mail returned | 5,568 | D+15.6 | D+7.6 | +8.0 |
+
+2,595 of these voters had no partisan primary in 2022–24 but took a **Democratic 2026 primary
+ballot**, so they are now coded D. Only 326 moved the same way to R. That relabeling reflects the
+2026 primary's turnout (122k D vs 50k R ballots in Franklin), not a change in who is voting
+early. Part of it is genuine engagement, since these people voted in a primary, but it is
+counted again as a "more Democratic electorate." **In Franklin, about 12 points of any
+"N points more Democratic than 2024" comparison is this artifact, before anything else.** It is
+also a presidential-to-midterm comparison, which mixes different electorates. Statewide numbers
+need their own check, but the mechanism applies in every county.
+
+### What can realistically be learned
+
+**Reasonably informative:**
+- **Turnout volume and where it comes from, compared with the same day in a comparable past
+  election.** This is especially useful in states that report by precinct or county. It tells
+  you where *participation* is up. Even this lags, and mode shifts distort it.
+- **The share of early voters who are new or infrequent voters**, by party or area, compared
+  with the same day in the previous cycle. Of all early-vote measures, this one comes closest to
+  reflecting enthusiasm, because habitual voters vote no matter what. It needs voter files with
+  history, which NC, PA, FL, NV and GA provide.
+- **Late in early voting** (the final weekend), when early votes are 50–80% of the total in states
+  like NC, GA, NV and AZ, the electorate's *composition* is mostly fixed. Even then it reflects
+  composition, not vote choice.
+
+**Not informative (and frequently misread):**
+- Party-registration margins of early ballots, compared across years. Mode habits (mail in
+  2020, R adoption in 2024, D drift back to in-person in 2026), registration drift and Ohio-style
+  primary labels move these numbers far more than outcomes move.
+- Early D − R margins as a forecast of the winner. Unaffiliated voters are 35–40% of NC returns
+  and lean differently each cycle. The early vote reveals nothing about persuasion, and in the
+  backtests above the actual swing was 3 to 18 times larger than any change in turnout makeup.
+
+**Bottom line:** Pooled across states, early vote data can show where turnout is up and whether
+low-propensity voters are being reached. It can't reliably say who is winning. Where it can be
+checked against the same point in a past election (NC), 2026 doesn't show the Democratic surge
+the early headlines suggest. Where headlines rely on party labels (Ohio), much of the apparent
+shift is an artifact of the labels.
+
 ## Caveats
 
 - **Different stages.** 2026 is requests at day 28 before the election. 2022 is final ballots
@@ -258,6 +347,8 @@ python scripts/fetch_franklin.py     # downloads raw BOE files to data/raw/ (git
 python scripts/analyze_franklin.py   # writes data/processed/*.csv, output/*.png, output/summary.json
 python scripts/backtest_franklin.py  # 2014-2024 backtest (run after analyze_franklin.py)
 python scripts/propensity_2026.py    # vote-history profile of 2026 requesters (run after analyze_franklin.py)
+python scripts/nc_early_vote.py      # NC same-day comparison + 2014-2024 backtest (downloads NCSBE files itself)
+python scripts/ohio_label_artifact.py  # Ohio party-label relabeling check on Franklin ballots cast
 ```
 
 ## Outputs
@@ -268,3 +359,5 @@ python scripts/propensity_2026.py    # vote-history profile of 2026 requesters (
 - `output/summary.json` — headline statistics
 - `data/processed/backtest_years.csv`, `backtest_pairs.csv` — backtest tables
 - `data/processed/propensity_2026_*.csv`, `output/propensity_summary.json` — requester vote-history tables
+- `data/processed/nc_*.csv` — NC daily returns by party/method (2014–2026), results, backtest
+- `data/processed/ohio_label_*.csv` — Ohio relabeling check

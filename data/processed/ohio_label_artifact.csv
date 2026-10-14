@@ -1,0 +1,4 @@
+group,ballots,label_current_D,label_current_R,label_current_U,label_current_D_minus_R,label_2024era_D,label_2024era_R,label_2024era_U,label_2024era_D_minus_R,artifact_pts
+all ballots cast,21551,51.02,11.94,37.03,39.08,40.56,13.51,45.93,27.05,12.03
+early in-person,15983,57.12,9.85,33.02,47.27,45.37,11.54,43.09,33.84,13.43
+mail returned,5568,33.51,17.94,48.55,15.57,26.74,19.16,54.09,7.58,7.99
