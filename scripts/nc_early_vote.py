@@ -135,7 +135,10 @@ def main():
     res = pd.DataFrame([results(y) for y in years if y != 2026])
     res.to_csv(PROC / "nc_results.csv", index=False)
 
-    now = int(daily[daily.year == 2026].days_before.min())  # 2026 data is current to this point
+    # 2026 data is current to the latest day with real volume; a handful of records carry
+    # mis-keyed future return dates and must not set the cutoff.
+    cur = daily[daily.year == 2026].groupby("days_before").ballots.sum()
+    now = int(cur[cur >= 100].index.min())
     rows = []
     for y in years:
         early = snapshot(daily, y, now)

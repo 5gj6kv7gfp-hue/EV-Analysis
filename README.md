@@ -327,6 +327,51 @@ checked against the same point in a past election (NC), 2026 doesn't show the De
 the early headlines suggest. Where headlines rely on party labels (Ohio), much of the apparent
 shift is an artifact of the labels.
 
+## Update, Oct 21, 2026: in-person early voting under way (NC, NV)
+
+**North Carolina, 14 days out** (`scripts/nc_early_vote.py`, which now ignores a few mis-dated
+records when setting the cutoff). In-person early voting began on the same calendar day in 2022
+and 2026 (19 days out), so this is a like-for-like comparison:
+
+| Same day (−14) | Ballots | D | R | Unaff. | D − R |
+|---|---:|---:|---:|---:|---:|
+| 2018 | 719,940 | 311,739 | 216,216 | 191,985 | +13.3 |
+| 2022 | 668,913 | 266,420 | 205,606 | 196,887 | +9.1 |
+| 2024 | 1,722,969 | 594,337 | 584,072 | 544,560 | +0.6 |
+| **2026** | **924,159** | **404,913** | **200,563** | **318,683** | **+22.1** |
+
+- Compared with 2022: D ballots are up 52%, unaffiliated up 62%, and **R ballots down 2.5%**. The
+  shift from mail to in-person explains very little of this: D mail ballots are down only
+  about 13k, while D in-person is up about 152k.
+- This is the first large, same-day signal this cycle. The backtest still applies. At 14 days
+  out, the change in D − R margin pointed the right way in 2 of 3 comparable pairs, and was 3.5 to
+  16 times larger than the change in the result. Read literally, +13 points of early margin
+  would mean about 1 to 4 points of D improvement over 2022. That range is wide and only
+  illustrative.
+- Main alternative explanation: **when people vote, not whether they vote.** Democrats may be
+  shifting from Election Day to early voting, and Republicans may be waiting for Election Day.
+  Republicans' raw early ballots are flat, not down, which fits either reading. The
+  vote-history check (are the extra D/unaffiliated early voters people who skipped 2022?)
+  would distinguish them. It needs NC's statewide vote-history file.
+
+**Nevada** (from the Nevada Independent blog's published numbers, through Oct 21, about 18% of
+expected turnout):
+- Statewide D+4 to D+5 on about 195k ballots. Mail is D+9, in-person R+3.
+- **Clark looks like 2022; Washoe is where it's better.** Clark's first-weekend combined early
+  vote in 2022 was about 58k ballots at D+13. 2026 is about 71k at roughly D+11 (mail D+14,
+  in-person D+4 to D+6, both estimated). That's a similar raw lead on more ballots. Washoe is
+  D+8 to D+9, against less than half that at the same point in 2022, and Washoe is
+  overrepresented (21–23% of ballots against 16% of registrants).
+- Votes are moving between methods: about 1 in 4 of 2022's in-person voters now vote by mail,
+  and that group leans R. Clark mail is less D than in 2022 (D+14 against about D+23), and
+  in-person is much less R (D+6 on Day 1, against R+8). Comparing one method at a time is
+  misleading. Only combined totals are comparable.
+- Best enthusiasm signal in the blog: **D in-person voters are 19% under 45, against R 7%. 94% of
+  R in-person voters voted in at least 2 of the last 3 generals.** So far the R early vote is
+  people who would have voted anyway, while Democrats are drawing in younger voters.
+- For the author's baseline final electorate of R+3, the remaining 82% must be about R+4.7. 2022
+  ended at about R+2.7, and Democrats still won the Senate race because nonpartisans leaned D.
+
 ## Caveats
 
 - **Different stages.** 2026 is requests at day 28 before the election. 2022 is final ballots
