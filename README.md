@@ -372,6 +372,117 @@ expected turnout):
 - For the author's baseline final electorate of R+3, the remaining 82% must be about R+4.7. 2022
   ended at about R+2.7, and Democrats still won the Senate race because nonpartisans leaned D.
 
+## Update, Oct 27, 2026 (8 days out): NC, PA, NV, and a multi-state snapshot
+
+### North Carolina: new turnout or the same voters earlier? (`scripts/nc_history.py`)
+
+Through 8 days out, NC early ballots are up 37% from 2022 at the same point. D ballots are up
+43%, R up 6.5% and unaffiliated up 60%; D − R is +16.7 against +8.0 in 2022. The D surge has
+come mainly in week one. Since then, daily margins are only slightly better than 2022's (the most
+recent day was D+5.6 against D+4.2).
+
+Every early voter was matched to the statewide vote-history file to see how they voted in the
+previous midterm. 2022's early voters at the same point were checked against 2018 as a baseline:
+
+| Early voters through day −8 | Didn't vote in prior midterm | Voted on Election Day in prior midterm | Already early/mail voters |
+|---|---:|---:|---:|
+| 2026 Democrats (vs 2022) | **24.6%** (178.9k) | 13.6% | 61.8% |
+| 2026 Republicans | **16.6%** (71.2k) | 18.7% | 64.7% |
+| 2026 Unaffiliated | 27.9% | 15.3% | 56.7% |
+| 2022 Democrats (vs 2018) | 18.6% | 13.0% | 68.3% |
+| 2022 Republicans | 20.5% | 17.6% | 61.9% |
+
+Where the D − R ballot lead grew relative to 2022 (+192.6k):
+
+- **Half (+96k) comes from people who didn't vote in 2022.** This is added turnout, not a timing
+  shift.
+- 12% (+24k) is 2022 Election Day voters voting early. That part is timing.
+- 38% is from voters who already voted early or by mail.
+
+D early voters include a *larger* share of prior-midterm non-voters than in 2022. R early
+voters include a *smaller* share. R voters who voted on Election Day in 2022 are mostly still
+waiting: they make up 18.7% of R early voters, about the same as the 2022 baseline (17.6%).
+This is the strongest evidence so far that the D early lead reflects added participation, not
+only earlier voting. Caveats:
+
+- "Didn't vote in 2022" includes people who registered after 2022 (some moved to NC) and
+  2024-only voters, who would have higher turnout than true drop-off voters.
+- Republicans holding their low-propensity voters for Election Day would also produce this
+  pattern.
+
+### Pennsylvania: mail only (no in-person early voting) (`scripts/pa_mail.py`)
+
+Same point (8 days out), from the Dept. of State's voter-level mail files:
+
+| | 2022 | 2024 | 2026 |
+|---|---:|---:|---:|
+| Mail ballots returned | 902k | 1,475k | 895k |
+| D / R / Other returned | 642k / 184k / 76k | 848k / 470k / 158k | 588k / 223k / 84k |
+| D − R (pts) | +50.8 | +25.6 | +40.9 |
+| Return rate D / R | 66.7% / 63.0% | 65.6% / 63.9% | 66.9% / 67.2% |
+
+- D returns are down 8% and R returns up 21%. D returns from voters under 45 are down 19–27%.
+  R returns from voters 65+ are up 30%.
+- This is a change in **voting method**: older Republicans keep the mail habit they took up in
+  2024, and younger Democrats move away from mail. Total mail volume is flat. **PA mail says
+  little about turnout or the outcome.** In 2022, mail was only about a quarter of PA's vote.
+
+### Nevada (Nevada Independent blog through Oct 26, 10 PM; UF tracker)
+
+- 444k ballots (about 40% of expected turnout). D 178.5k, R 154.1k, other 111.6k: **D+24.4k
+  (5.5 pts)**.
+- **Clark: D+36.8k (12.4 pts) against D+20.9k (7.9 pts) at the same point in 2022.** In-person
+  is D+4.6k, against R+14.9k in 2022. Mail is D+32.1k, against D+35.8k in 2022.
+- Washoe is D+4.9k (5.8 pts), against R+7.4k for Washoe's *final* 2022 ballots. The rural
+  counties are R+18.1k (31 pts) on 58k ballots, against R+53.9k on 145k in 2022.
+- Timing checks (Erik Jimenez, as of Oct 23):
+  - 2022 Election Day voters have voted early at equal rates by party (R 8.4%, D 8.5%), so
+    Election Day reserves aren't being distorted unevenly.
+  - Among voters who voted in all three generals 2020–24, 26.6% of D have voted against 20.8% of
+    R. That leaves about 229k R and 175k D of these regulars still to vote, a reserve of about
+    54k for Republicans. That's larger than the current D lead.
+- Warning signs for Democrats: the electorate is old so far (16.6% under 45), and Latino voters
+  are 11.9% of ballots against a 15.5% benchmark.
+- Rough arithmetic: 2022 ended with Republicans ahead by about 28k ballots after winning
+  Election Day by about 50k. Democrats still won the Senate race because nonpartisans and
+  crossover voters were worth roughly +36k to them. If 2026 finishes the 16–20k ballots better
+  than 2022 that it's currently running, it ends near even to R+10k on ballots. That leans D but
+  is within reach for Republicans. The size of the regulars reserve is the key uncertainty.
+
+### Multi-state snapshot (UF Election Lab, Oct 26–27)
+
+Ballots already cast as % of each state's *total* 2022 turnout:
+
+| State | Ballots cast | % of 2022 total | D / R share (where registration exists) |
+|---|---:|---:|---|
+| TX | 4.54M | 55.7% | n/a |
+| GA | 1.95M | 49.3% | n/a |
+| NC | 1.77M | 46.8% | 41.0 / 24.2 |
+| NV | 0.44M | 43.4% | 40.2 / 34.7 |
+| FL | 3.18M | 40.7% | 39.5 / 39.8 |
+| AZ | 0.97M | 37.5% | 38.1 / 38.8 |
+| MI | 1.21M | 27.0% | n/a |
+| OH | 1.08M | 25.8% | n/a (primary-based codes; see above) |
+| IA | 0.31M | 24.9% | 49.4 / 32.4 |
+| WI | 0.44M | 16.5% | n/a |
+| PA | 0.83M | 15.4% | 66.3 / 24.5 |
+
+Early turnout is running high in the Sun Belt states. Only NC, PA and NV have same-day 2022
+baselines here. **The FL, AZ and IA party splits have no baseline and shouldn't be read as
+leads.** AZ and FL early votes have leaned R in recent cycles because of method habits.
+
+### Overall assessment
+
+- **NC (strongest evidence).** The D early lead is mostly added turnout, half of it from 2022
+  non-voters. It isn't just a timing shift. This points to a better D result than 2022 (48.4%
+  in the Senate race). The backtest still caps confidence: early margins have overstated
+  changes in the result by 3–16×.
+- **NV.** Ahead of the 2022 pace in Clark and Washoe, where Democrats won the 2022 Senate race.
+  The R regulars reserve keeps it close.
+- **PA.** Uninformative: mail data mostly reflects changes in voting method.
+- **Everywhere.** Early data measures who votes, not how unaffiliated voters break. In 2022
+  they decided both NC and NV.
+
 ## Caveats
 
 - **Different stages.** 2026 is requests at day 28 before the election. 2022 is final ballots
@@ -394,6 +505,8 @@ python scripts/backtest_franklin.py  # 2014-2024 backtest (run after analyze_fra
 python scripts/propensity_2026.py    # vote-history profile of 2026 requesters (run after analyze_franklin.py)
 python scripts/nc_early_vote.py      # NC same-day comparison + 2014-2024 backtest (downloads NCSBE files itself)
 python scripts/ohio_label_artifact.py  # Ohio party-label relabeling check on Franklin ballots cast
+python scripts/nc_history.py         # NC early voters by prior-midterm vote method (streams ncvhis, ~350 MB)
+python scripts/pa_mail.py            # PA mail ballots, 2026 vs 2022/2024 same day (data.pa.gov SoQL)
 ```
 
 ## Outputs
